@@ -1,0 +1,44 @@
+/* App.css */
+.header {
+    color: white;
+    font-size: 20px;
+}
+
+.layout {
+    height: 100vh;
+}
+
+.cart-summary p {
+    margin-bottom: 10px;
+}
+
+.left-part {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+/* CartPage.css */
+.cart-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.cart-item-control {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.8rem;
+    /* Adjust the gap between controls as needed */
+}
+
+.item-count {
+    min-width: 32px;
+    text-align: center;
+}
+
+.item-price {
+    margin-left: auto;
+    padding-left: 16px;
+}
