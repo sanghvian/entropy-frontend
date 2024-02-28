@@ -1,17 +1,18 @@
 // App.tsx
-import React, { useReducer } from 'react';
-import { Layout, List, Button, Row, Col, Card, Typography, Image } from 'antd';
+import React, { useReducer, useEffect, useState } from 'react';
+import { Layout, List, Button, Row, Col, Card, Typography } from 'antd';
 import './CartPage.css';
 
-const Text = Typography.Text;
+const { Header, Content } = Layout;
+const { Text } = Typography;
 
 // Types for our cart items and cart state
 type CartItem = {
     name: string;
-    weight: string;
+    weight?: string;
     numUnits: number;
     perUnitCost: number;
-    imgSrc?: string;
+    imgSrc: string;
 };
 
 type CartState = {
@@ -21,77 +22,72 @@ type CartState = {
     total: number;
 };
 
-const { Header, Content } = Layout;
-
 // Action types for our reducer
 type CartAction =
     | { type: 'ADD_ITEM'; item: CartItem }
     | { type: 'REMOVE_ITEM'; name: string }
-    | { type: 'UPDATE_ITEM_UNITS'; name: string; numUnits: number };
+    | { type: 'UPDATE_ITEM_UNITS'; name: string; numUnits: number }
+    | { type: 'SET_ITEMS'; items: CartItem[] };
 
 // Reducer function to handle cart actions
 const cartReducer = (state: CartState, action: CartAction): CartState => {
     switch (action.type) {
         case 'ADD_ITEM':
-            // Check if item is already in cart
             const itemIndex = state.items.findIndex(item => item.name === action.item.name);
             if (itemIndex >= 0) {
-                // Update item numUnits if it exists
                 const updatedItems = state.items.map((item, index) =>
                     index === itemIndex ? { ...item, numUnits: item.numUnits + 1 } : item
                 );
-                return {
-                    ...state,
-                    items: updatedItems,
-                };
+                return calculateTotals({ ...state, items: updatedItems });
             }
-            // Add new item to cart
-            return {
-                ...state,
-                items: [...state.items, action.item],
-            };
+            return calculateTotals({ ...state, items: [...state.items, action.item] });
         case 'REMOVE_ITEM':
-            return {
-                ...state,
-                items: state.items.filter(item => item.name !== action.name),
-            };
+            return calculateTotals({ ...state, items: state.items.filter(item => item.name !== action.name) });
         case 'UPDATE_ITEM_UNITS':
-            return {
-                ...state,
-                items: state.items.map(item =>
-                    item.name === action.name ? { ...item, numUnits: action.numUnits } : item
-                ),
-            };
+            const itemsUpdated = state.items.map(item =>
+                item.name === action.name ? { ...item, numUnits: action.numUnits } : item
+            );
+            return calculateTotals({ ...state, items: itemsUpdated });
+        case 'SET_ITEMS':
+            return calculateTotals({ ...state, items: action.items });
         default:
             return state;
     }
 };
 
-const initialState: CartState = {
-    items: [{
-        name: 'Doritos Nacho Cheese',
-        weight: '400g',
-        numUnits: 1,
-        perUnitCost: 2.78,
-        imgSrc: 'https://testbucket1841.s3.ap-south-1.amazonaws.com/dump/test-item.png'
-    }],
-    subtotal: 2.78,
-    tax: 1,
-    total: 3.78,
+const calculateTotals = (state: CartState): CartState => {
+    const subtotal = state.items.reduce((acc, item) => acc + item.numUnits * item.perUnitCost, 0);
+    const tax = subtotal * 0.02; // Example tax rate
+    const total = subtotal + tax;
+    return { ...state, subtotal, tax, total };
 };
 
-
+const initialState: CartState = {
+    items: [],
+    subtotal: 0,
+    tax: 0,
+    total: 0,
+};
 
 const CartPage: React.FC = () => {
     const [cartState, dispatch] = useReducer(cartReducer, initialState);
-    // const calculateTotals = (items: CartItem[]) => {
-    //     const subtotal = items.reduce((acc, item) => acc + item.numUnits * item.perUnitCost, 0);
-    //     const tax = subtotal * 0.07; // Assuming a 7% tax rate for example
-    //     const total = subtotal + tax;
+    const [videoStreamUrl, setVideoStreamUrl] = useState<string | null>(null);
 
-    //     return { subtotal, tax, total };
-    // };
-    // Function to handle incrementing the number of units for an item
+    // WebSocket setup for live video and detected products
+    useEffect(() => {
+        // Example WebSocket setup for detected items
+        const productStream = new WebSocket('ws://example.com/products');
+        productStream.onmessage = (event) => {
+            const detectedItems: CartItem[] = JSON.parse(event.data); // Assuming the server sends the correct format
+            dispatch({ type: 'SET_ITEMS', items: detectedItems });
+        };
+
+        // Cleanup on component unmount
+        return () => {
+            productStream.close();
+        };
+    }, []);
+
     const handleIncrement = (name: string) => {
         dispatch({
             type: 'UPDATE_ITEM_UNITS',
@@ -100,7 +96,6 @@ const CartPage: React.FC = () => {
         });
     };
 
-    // Function to handle decrementing the number of units for an item
     const handleDecrement = (name: string) => {
         const currentUnits = cartState.items.find(item => item.name === name)!.numUnits;
         if (currentUnits > 1) {
@@ -114,18 +109,6 @@ const CartPage: React.FC = () => {
         }
     };
 
-    // Function to calculate the totals
-    const calculateTotals = (items: CartItem[]) => {
-        const subtotal = items.reduce((acc, item) => acc + item.numUnits * item.perUnitCost, 0);
-        const tax = subtotal * 0.02; // 2% tax rate
-        const total = subtotal + tax;
-
-        return { subtotal, tax, total };
-    };
-
-    const totals = calculateTotals(cartState.items);
-
-
     return (
         <Layout className="layout">
             <Header>
@@ -134,12 +117,13 @@ const CartPage: React.FC = () => {
             <Content style={{ padding: '50px' }}>
                 <Row gutter={16}>
                     <Col span={12}>
+                        {/* Placeholder for video feed */}
                         <Card
                             hoverable
-                            style={{ width: 750 }}
-                            cover={<img alt="example" src="https://testbucket1841.s3.ap-south-1.amazonaws.com/dump/test-item.png" />}
+                            style={{ width: '100%', height: 'auto' }}
+                            cover={<img alt="Video Feed" src={videoStreamUrl || 'https://via.placeholder.com/750'} />}
                         >
-                            <Card.Meta title="Doritos Nacho Cheese" description="Scanning..." />
+                            <Card.Meta title="Live Video Feed" description="Scanning..." />
                         </Card>
                     </Col>
                     <Col span={12}>
@@ -152,59 +136,38 @@ const CartPage: React.FC = () => {
                                     renderItem={(item: CartItem) => (
                                         <List.Item className="cart-item">
                                             <List.Item.Meta
-                                                avatar={
-                                                    <img
-                                                        width={64}
-                                                        src={'https://testbucket1841.s3.ap-south-1.amazonaws.com/dump/test-item.png'}
-                                                        alt={item.name} />
-                                                }
+                                                avatar={<img width={64} src={item.imgSrc} alt={item.name} />}
                                                 description={
                                                     <div className="cart-item-control">
-                                                        <Text strong>{item.name} - {item.weight}</Text>
+                                                        <Text strong>{item.name}</Text>
                                                         <Button
                                                             type="text"
                                                             onClick={() => dispatch({ type: 'REMOVE_ITEM', name: item.name })}
-                                                            style={{
-                                                                display: 'flex',
-                                                                justifyContent: 'flex-end'
-                                                            }}
-                                                        // icon={<CloseOutlined />}
                                                         >x</Button>
                                                         <div>
-                                                            <Button onClick={() => handleDecrement(item.name)}>-</Button> &nbsp; &nbsp; &nbsp;
-                                                            <Text className="item-count">{item.numUnits}</Text> &nbsp; &nbsp; &nbsp;
+                                                            <Button onClick={() => handleDecrement(item.name)}>-</Button>
+                                                            <Text className="item-count">{item.numUnits}</Text>
                                                             <Button onClick={() => handleIncrement(item.name)}>+</Button>
                                                         </div>
                                                         <Text className="item-price">${(item.perUnitCost * item.numUnits).toFixed(2)}</Text>
                                                     </div>
                                                 }
                                             />
-
                                         </List.Item>
                                     )}
                                 />
                             </Card>
                             <div className="cart-summary">
                                 <Card>
-
-                                    <p>Subtotal: ${totals.subtotal.toFixed(2)}</p>
-                                    <p>Tax: ${totals.tax.toFixed(2)}</p>
-                                    <p>Total: ${totals.total.toFixed(2)}</p>
+                                    <p>Subtotal: ${cartState.subtotal.toFixed(2)}</p>
+                                    <p>Tax: ${cartState.tax.toFixed(2)}</p>
+                                    <p>Total: ${cartState.total.toFixed(2)}</p>
                                     <Button type="primary" block>
                                         Finish and Pay
                                     </Button>
                                 </Card>
                             </div>
                         </div>
-                        {/* <div className="cart-summary">
-                            <p>Subtotal: $0</p>
-                            <p>Tax: $0</p>
-                            <p>Total: $0</p>
-                            <p>Amount Paid: $0</p>
-                            <Button type="primary" block>
-                                Checkout
-                            </Button>
-                        </div> */}
                     </Col>
                 </Row>
             </Content>
