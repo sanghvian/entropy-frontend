@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Layout, List, Button, Row, Col, Card, Typography } from 'antd';
+import { Layout, Button, Typography } from 'antd';
 import './CartPage.css';
 
 const { Header, Content } = Layout;
@@ -120,36 +120,8 @@ const CartPage: React.FC = () => {
     }, [cartState.items]);
 
     return (
-        <div
-            style={{
-                height: "100%",
-                minHeight: "99vh",
-                width: "100%",
-                maxWidth: "100vw",
-                overflow: "hidden",
-                backgroundColor: "#90A0B7",
-                padding: "1.3rem",
-                margin: "0",
-                display: "flex",
-                alignItems: "stretch",
-                justifyContent: "stretch",
-                gap: "1rem"
-            }}
-        >
-            <div
-                style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "stretch",
-                    width: "64%",
-                    maxHeight: "90vh",
-                    borderRadius: "10px",
-                    justifyContent: "stretch",
-                    backgroundColor: "#fff",
-                    boxShadow: "5px 5px 3px 0px rgba(0, 0, 0, 0.25)"
-
-                }}
-            >
+        <div className="cart-page-container">
+            <div className='cart-page-canvas'>
                 <canvas
                     ref={canvasRef} style={{
                         position: 'relative', top: '5%', left: '5%',
@@ -157,44 +129,11 @@ const CartPage: React.FC = () => {
                     }}></canvas>
 
             </div>
-            <div
-                style={{
-                    display: "flex",
-                    flexBasis: "1",
-                    height: "90vh",
-                    flexDirection: "column",
-                    justifyContent: "stretch",
-                    alignItems: "stretch",
-                    gap: '1rem',
-                }}
-            >
-                <div
-                    style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        width: "100%",
-                        height: "95%",
-                        borderRadius: "10px",
-                        justifyContent: "space-between",
-                        backgroundColor: "#fff",
-                        boxShadow: "5px 5px 3px 0px rgba(0, 0, 0, 0.25)",
-                        padding: '1rem',
-                    }}
-                >
+            <div className='cart-page-details'>
+                <div className='cart-page-cost'>
                     <h3 style={{ color: '##002F8E', margin: '0', marginBottom: '1.2rem' }}>CART</h3>
                     {cartState.items.map((item, index) => (
-                        <div style={{
-                            border: '1px solid #D8D8D8',
-                            borderRadius: '5px',
-                            width: '95%',
-                            height: 'auto',
-                            padding: '0.5rem',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            marginBottom: '0.8rem'
-                        }}>
+                        <div className='cart-item'>
                             <div
                                 style={{ display: 'flex' }}
                             >
@@ -288,22 +227,25 @@ const CartPage: React.FC = () => {
                             </div>
                         </div>
                     ))}
-                    <div style={{ justifySelf: 'flex-end', width: '100%', display: 'flex', flexDirection: 'column' }}>
+                    <div style={{
+                        justifySelf: 'flex-end',
+                        width: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        padding: '1rem',
+                    }}>
                         <p
                             style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                        ><span>Subtotal</span>
-                            : <span style={{ fontWeight: 'bold' }}>${cartState.subtotal.toFixed(2)} </span></p>
+                        ><span>Subtotal</span><span style={{ fontWeight: 'bold' }}>${cartState.subtotal.toFixed(2)} </span></p>
                         <p
                             style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                        ><span>Tax</span>
-                            : <span style={{ fontWeight: 'bold' }}>${cartState.tax.toFixed(2)} </span></p>
+                        ><span>Tax</span><span style={{ fontWeight: 'bold' }}>${cartState.tax.toFixed(2)} </span></p>
                         <div
                             style={{ width: '100%', height: '1px', background: '#E0E0E0' }}
                         ></div>
                         <p
                             style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                        ><span>Total</span>
-                            : <span style={{ fontWeight: 'bold' }}>${cartState.total.toFixed(2)} </span></p>
+                        ><span>Total</span><span style={{ fontWeight: 'bold' }}>${cartState.total.toFixed(2)} </span></p>
                     </div>
                 </div>
                 <Button type="primary" block style={{ width: '100%', fontWeight: 'bold' }}>Finish and Pay</Button>

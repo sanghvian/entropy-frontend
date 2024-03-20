@@ -1,5 +1,3 @@
-import { Button } from 'antd';
-import React from 'react'
 import { useNavigate } from 'react-router-dom'
 
 const HomePage = () => {
@@ -8,7 +6,7 @@ const HomePage = () => {
         <div
             style={{
                 height: "100%",
-                minHeight: "94vh",
+                // minHeight: "94vh",
                 width: "100%",
                 backgroundColor: "#90A0B7",
                 padding: "1.3rem",
@@ -26,7 +24,7 @@ const HomePage = () => {
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
-                    width: "97%",
+                    width: "100%",
                     borderRadius: "10px",
                     justifyContent: "center",
                     backgroundColor: "#fff",
@@ -45,7 +43,7 @@ const HomePage = () => {
                 <h1
                     style={{
                         color: "#002F8E",
-                        fontSize: "3rem",
+                        fontSize: "2.4rem",
                         marginBottom: "0",
                     }}
                 >WELCOME TO ENTROPY</h1>
@@ -53,7 +51,7 @@ const HomePage = () => {
                     style={{
                         marginTop: "1rem",
                         color: "#90A0B7",
-                        fontSize: "1.5rem",
+                        fontSize: "1.3rem",
                     }}
                 >Tap the Screen to Get Started</h3>
             </div>
