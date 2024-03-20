@@ -72,7 +72,7 @@ const CartPage: React.FC = () => {
 
     useEffect(() => {
         // WebSocket for detected products
-        const productStream = new WebSocket('ws://128.2.24.200:9001');
+        const productStream = new WebSocket('ws://128.2.240.132:9001');
         productStream.onmessage = (event) => {
             const detectedItem: CartItem = JSON.parse(event.data);
             // Add the detected item to the cart (simplified logic)
@@ -83,7 +83,7 @@ const CartPage: React.FC = () => {
         };
 
         // WebSocket for camera feed
-        const videoStream = new WebSocket('ws://128.2.24.200:9000');
+        const videoStream = new WebSocket('ws://128.2.240.132:9000');
         videoStream.onmessage = async (event) => {
             const blob = new Blob([event.data], { type: "image/jpeg" });
             const image = new Image();

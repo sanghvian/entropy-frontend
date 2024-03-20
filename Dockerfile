@@ -10,6 +10,8 @@ COPY package*.json ./
 # Install any dependencies
 RUN npm install
 
+RUN chown -R node.node node_modules
+
 # Copy the rest of the application code
 COPY . .
 
