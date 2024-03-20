@@ -11,7 +11,7 @@ const ctx = canvas.getContext("2d");
 
 // const camera_stream_port = 8765
 const camera_stream_port = 9000
-const camera_stream = new WebSocket(`ws://128.2.24.200:${camera_stream_port}`)
+const camera_stream = new WebSocket(`ws://128.2.24.200:9000`)
 camera_stream.addEventListener("message", async (event) => {
     const blob = new Blob([event.data], { type: "image/jpeg" })
     const image = new Image()
@@ -19,11 +19,11 @@ camera_stream.addEventListener("message", async (event) => {
     await image.decode() // wait for image to load
 
     const image_ar = image.width / image.height;
-    
-    canvas.width  = canvas.clientWidth;
+
+    canvas.width = canvas.clientWidth;
     canvas.height = canvas.clientHeight;
     const canvas_ar = canvas.width / canvas.height;
-    
+
     var draw_width = canvas.width;
     var draw_height = canvas.height;
     if (image_ar > canvas_ar) {
@@ -48,10 +48,10 @@ secondary_stream.addEventListener("message", async (event) => {
     product_list.innerHTML =
         inference.map(item => {
             const image = new Image()
-            image.src   = item.matched_img
+            image.src = item.matched_img
             image.class = "card-img"
             image.style.height = "100%"
-            image.style.width  = "100%"
+            image.style.width = "100%"
             image.style.objectFit = "contain"
             return `
             <div class="card mb-3">
@@ -73,6 +73,6 @@ secondary_stream.addEventListener("message", async (event) => {
         }).join('');
 })
 
-calibrate_button.onclick = function() {
+calibrate_button.onclick = function () {
     secondary_stream.send("calibrate")   // alert('click!')
 }

@@ -1,19 +1,9 @@
-// App.tsx
-import React, { useReducer, useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Layout, List, Button, Row, Col, Card, Typography } from 'antd';
 import './CartPage.css';
 
 const { Header, Content } = Layout;
 const { Text } = Typography;
-
-// Types for our cart items and cart state
-type CartItem = {
-    name: string;
-    weight?: string;
-    numUnits: number;
-    perUnitCost: number;
-    imgSrc: string;
-};
 
 type CartState = {
     items: CartItem[];
@@ -22,156 +12,303 @@ type CartState = {
     total: number;
 };
 
-// Action types for our reducer
-type CartAction =
-    | { type: 'ADD_ITEM'; item: CartItem }
-    | { type: 'REMOVE_ITEM'; name: string }
-    | { type: 'UPDATE_ITEM_UNITS'; name: string; numUnits: number }
-    | { type: 'SET_ITEMS'; items: CartItem[] };
 
-// Reducer function to handle cart actions
-const cartReducer = (state: CartState, action: CartAction): CartState => {
-    switch (action.type) {
-        case 'ADD_ITEM':
-            const itemIndex = state.items.findIndex(item => item.name === action.item.name);
-            if (itemIndex >= 0) {
-                const updatedItems = state.items.map((item, index) =>
-                    index === itemIndex ? { ...item, numUnits: item.numUnits + 1 } : item
-                );
-                return calculateTotals({ ...state, items: updatedItems });
-            }
-            return calculateTotals({ ...state, items: [...state.items, action.item] });
-        case 'REMOVE_ITEM':
-            return calculateTotals({ ...state, items: state.items.filter(item => item.name !== action.name) });
-        case 'UPDATE_ITEM_UNITS':
-            const itemsUpdated = state.items.map(item =>
-                item.name === action.name ? { ...item, numUnits: action.numUnits } : item
-            );
-            return calculateTotals({ ...state, items: itemsUpdated });
-        case 'SET_ITEMS':
-            return calculateTotals({ ...state, items: action.items });
-        default:
-            return state;
+// Assuming CartItem structure matches the one you receive from the WebSocket
+type CartItem = {
+    name: string;
+    upc: string;
+    fact: string,
+    matched_img: string;
+    numUnits: number;
+    perUnitCost: number;
+};
+
+const cartItemsMockData = [
+    {
+        upc: "1234567890",
+        name: "Doritos Nacho Cheese",
+        fact: "400g",
+        perUnitCost: 3.99,
+        numUnits: 1,
+        matched_img: "https://testbucket1841.s3.ap-south-1.amazonaws.com/dump/dorito.png"
+    },
+    {
+        upc: "028400329125",
+        name: "Oreos",
+        fact: "Party-Size",
+        perUnitCost: 4.99,
+        numUnits: 1,
+        matched_img: "https://testbucket1841.s3.ap-south-1.amazonaws.com/dump/oreo.png"
+    },
+    {
+        upc: "",
+        name: "Peanut M&Ms",
+        fact: "1.74oz",
+        perUnitCost: 1.99,
+        numUnits: 1,
+        matched_img: "https://testbucket1841.s3.ap-south-1.amazonaws.com/dump/m&m.png"
     }
-};
 
-const calculateTotals = (state: CartState): CartState => {
-    const subtotal = state.items.reduce((acc, item) => acc + item.numUnits * item.perUnitCost, 0);
-    const tax = subtotal * 0.02; // Example tax rate
-    const total = subtotal + tax;
-    return { ...state, subtotal, tax, total };
-};
+]
 
+// Initialize with mock data for demonstration
 const initialState: CartState = {
-    items: [],
+    items: cartItemsMockData,
     subtotal: 0,
     tax: 0,
     total: 0,
 };
 
-const CartPage: React.FC = () => {
-    const [cartState, dispatch] = useReducer(cartReducer, initialState);
-    const [videoStreamUrl, setVideoStreamUrl] = useState<string | null>(null);
+const calculateTotals = (items: CartItem[]): CartState => {
+    const subtotal = items.reduce((acc, item) => acc + item.numUnits * item.perUnitCost, 0);
+    const tax = subtotal * 0.1; // Assuming a 10% tax rate
+    const total = subtotal + tax;
+    return { items, subtotal, tax, total };
+};
 
-    // WebSocket setup for live video and detected products
+const CartPage: React.FC = () => {
+    const [cartState, setCartState] = useState<CartState>(calculateTotals(initialState.items));
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+
     useEffect(() => {
-        // Example WebSocket setup for detected items
-        const productStream = new WebSocket('ws://example.com/products');
+        // WebSocket for detected products
+        const productStream = new WebSocket('ws://128.2.24.200:9001');
         productStream.onmessage = (event) => {
-            const detectedItems: CartItem[] = JSON.parse(event.data); // Assuming the server sends the correct format
-            dispatch({ type: 'SET_ITEMS', items: detectedItems });
+            const detectedItem: CartItem = JSON.parse(event.data);
+            // Add the detected item to the cart (simplified logic)
+            if (cartState.items.length < 3) {
+                const newItems = [...cartState.items, detectedItem];
+                setCartState(calculateTotals(newItems));
+            }
         };
 
-        // Cleanup on component unmount
+        // WebSocket for camera feed
+        const videoStream = new WebSocket('ws://128.2.24.200:9000');
+        videoStream.onmessage = async (event) => {
+            const blob = new Blob([event.data], { type: "image/jpeg" });
+            const image = new Image();
+            image.src = URL.createObjectURL(blob);
+            await image.decode(); // Wait for image to load
+
+            const canvas = canvasRef.current;
+            if (canvas) {
+                const ctx = canvas.getContext("2d");
+                if (ctx) {
+                    const image_ar = image.width / image.height;
+                    canvas.width = canvas.clientWidth;
+                    canvas.height = canvas.clientHeight;
+                    const canvas_ar = canvas.width / canvas.height;
+
+                    let draw_width = canvas.width;
+                    let draw_height = canvas.height;
+                    if (image_ar > canvas_ar) {
+                        draw_height = draw_width / image_ar;
+                    } else {
+                        draw_width = draw_height * image_ar;
+                    }
+
+                    ctx.drawImage(image, 0, 0, draw_width, draw_height);
+                    URL.revokeObjectURL(image.src); // Clean up
+                }
+            }
+        };
+
         return () => {
             productStream.close();
+            videoStream.close();
         };
-    }, []);
-
-    const handleIncrement = (name: string) => {
-        dispatch({
-            type: 'UPDATE_ITEM_UNITS',
-            name: name,
-            numUnits: cartState.items.find(item => item.name === name)!.numUnits + 1,
-        });
-    };
-
-    const handleDecrement = (name: string) => {
-        const currentUnits = cartState.items.find(item => item.name === name)!.numUnits;
-        if (currentUnits > 1) {
-            dispatch({
-                type: 'UPDATE_ITEM_UNITS',
-                name: name,
-                numUnits: currentUnits - 1,
-            });
-        } else {
-            dispatch({ type: 'REMOVE_ITEM', name: name });
-        }
-    };
+    }, [cartState.items]);
 
     return (
-        <Layout className="layout">
-            <Header>
-                <div className="header">Scan Items</div>
-            </Header>
-            <Content style={{ padding: '50px' }}>
-                <Row gutter={16}>
-                    <Col span={12}>
-                        {/* Placeholder for video feed */}
-                        <Card
-                            hoverable
-                            style={{ width: '100%', height: 'auto' }}
-                            cover={<img alt="Video Feed" src={videoStreamUrl || 'https://via.placeholder.com/750'} />}
-                        >
-                            <Card.Meta title="Live Video Feed" description="Scanning..." />
-                        </Card>
-                    </Col>
-                    <Col span={12}>
-                        <div className='left-part'>
-                            <Card>
-                                <List
-                                    header={<div>{cartState.items.length} items</div>}
-                                    bordered
-                                    dataSource={cartState.items}
-                                    renderItem={(item: CartItem) => (
-                                        <List.Item className="cart-item">
-                                            <List.Item.Meta
-                                                avatar={<img width={64} src={item.imgSrc} alt={item.name} />}
-                                                description={
-                                                    <div className="cart-item-control">
-                                                        <Text strong>{item.name}</Text>
-                                                        <Button
-                                                            type="text"
-                                                            onClick={() => dispatch({ type: 'REMOVE_ITEM', name: item.name })}
-                                                        >x</Button>
-                                                        <div>
-                                                            <Button onClick={() => handleDecrement(item.name)}>-</Button>
-                                                            <Text className="item-count">{item.numUnits}</Text>
-                                                            <Button onClick={() => handleIncrement(item.name)}>+</Button>
-                                                        </div>
-                                                        <Text className="item-price">${(item.perUnitCost * item.numUnits).toFixed(2)}</Text>
-                                                    </div>
-                                                }
-                                            />
-                                        </List.Item>
-                                    )}
-                                />
-                            </Card>
-                            <div className="cart-summary">
-                                <Card>
-                                    <p>Subtotal: ${cartState.subtotal.toFixed(2)}</p>
-                                    <p>Tax: ${cartState.tax.toFixed(2)}</p>
-                                    <p>Total: ${cartState.total.toFixed(2)}</p>
-                                    <Button type="primary" block>
-                                        Finish and Pay
-                                    </Button>
-                                </Card>
+        <div
+            style={{
+                height: "100%",
+                minHeight: "99vh",
+                width: "100%",
+                maxWidth: "100vw",
+                overflow: "hidden",
+                backgroundColor: "#90A0B7",
+                padding: "1.3rem",
+                margin: "0",
+                display: "flex",
+                alignItems: "stretch",
+                justifyContent: "stretch",
+                gap: "1rem"
+            }}
+        >
+            <div
+                style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "stretch",
+                    width: "64%",
+                    maxHeight: "90vh",
+                    borderRadius: "10px",
+                    justifyContent: "stretch",
+                    backgroundColor: "#fff",
+                    boxShadow: "5px 5px 3px 0px rgba(0, 0, 0, 0.25)"
+
+                }}
+            >
+                <canvas
+                    ref={canvasRef} style={{
+                        position: 'relative', top: '5%', left: '5%',
+                        width: '90%', height: '90%'
+                    }}></canvas>
+
+            </div>
+            <div
+                style={{
+                    display: "flex",
+                    flexBasis: "1",
+                    height: "90vh",
+                    flexDirection: "column",
+                    justifyContent: "stretch",
+                    alignItems: "stretch",
+                    gap: '1rem',
+                }}
+            >
+                <div
+                    style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        width: "100%",
+                        height: "95%",
+                        borderRadius: "10px",
+                        justifyContent: "space-between",
+                        backgroundColor: "#fff",
+                        boxShadow: "5px 5px 3px 0px rgba(0, 0, 0, 0.25)",
+                        padding: '1rem',
+                    }}
+                >
+                    <h3 style={{ color: '##002F8E', margin: '0', marginBottom: '1.2rem' }}>CART</h3>
+                    {cartState.items.map((item, index) => (
+                        <div style={{
+                            border: '1px solid #D8D8D8',
+                            borderRadius: '5px',
+                            width: '95%',
+                            height: 'auto',
+                            padding: '0.5rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            marginBottom: '0.8rem'
+                        }}>
+                            <div
+                                style={{ display: 'flex' }}
+                            >
+                                <div
+                                    style={{
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        justifyContent: 'center',
+                                        alignItems: 'center',
+                                        background: "#E8EFFA",
+                                        padding: '0.5rem',
+                                        marginRight: '0.5rem',
+                                    }}
+                                >
+                                    <img
+                                        src={item.matched_img}
+                                        alt="Product"
+                                        style={{
+                                            width: '40px'
+                                        }} />
+                                </div>
+                                <div
+                                    style={{
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        justifyContent: 'flex-start',
+                                        alignItems: 'flex-start'
+                                    }}
+                                >
+                                    <Text strong>{item.name} - {item.fact}</Text>
+                                    <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
+                                        <Button
+                                            style={{
+                                                borderRadius: '50%',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                background: '#90A0B7',
+                                                color: 'white',
+                                                padding: '0.5rem'
+                                            }}
+                                            onClick={() => {
+                                                // Example function to handle decrementing item units
+                                                const updatedItems = cartState.items.map((cartItem) =>
+                                                    cartItem.upc === item.upc ? { ...cartItem, numUnits: Math.max(cartItem.numUnits - 1, 0) } : cartItem
+                                                ).filter((cartItem) => cartItem.numUnits > 0);
+                                                setCartState(calculateTotals(updatedItems));
+                                            }}><svg xmlns="http://www.w3.org/2000/svg" width="11" height="3" viewBox="0 0 11 3" fill="none">
+                                                <path d="M9.81299 1.5H1.13007" stroke="white" stroke-width="2" stroke-linecap="round" />
+                                            </svg></Button>
+                                        &nbsp;
+                                        <Text>{item.numUnits}</Text>
+                                        &nbsp;
+                                        <Button
+                                            style={{
+                                                borderRadius: '50%',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                background: '#90A0B7',
+                                                color: 'white',
+                                                padding: '0.5rem'
+                                            }}
+                                            onClick={() => {
+                                                // Example function to handle incrementing item units
+                                                const updatedItems = cartState.items.map((cartItem) =>
+                                                    cartItem.upc === item.upc ? { ...cartItem, numUnits: cartItem.numUnits + 1 } : cartItem
+                                                );
+                                                setCartState(calculateTotals(updatedItems));
+                                            }}><svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 11 11" fill="none">
+                                                <path d="M9.95876 5.5377H1.17285" stroke="white" stroke-width="2" stroke-linecap="round" />
+                                                <path d="M5.56586 9.93939V1.1362" stroke="white" stroke-width="2" stroke-linecap="round" />
+                                            </svg></Button>
+
+                                    </div>
+                                </div>
+                            </div>
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'flex-end'
+                                }}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="32" viewBox="0 0 31 32" fill="none">
+                                    <path d="M23.249 23.7523L7.75367 8.25695" stroke="#4F4F4F" stroke-width="3" stroke-linecap="round" />
+                                    <path d="M7.77145 23.7581L23.2642 8.26544" stroke="#4F4F4F" stroke-width="3" stroke-linecap="round" />
+                                </svg>
+                                <Text strong>${(item.numUnits * item.perUnitCost).toFixed(2)}</Text>
                             </div>
                         </div>
-                    </Col>
-                </Row>
-            </Content>
-        </Layout>
+                    ))}
+                    <div style={{ justifySelf: 'flex-end', width: '100%', display: 'flex', flexDirection: 'column' }}>
+                        <p
+                            style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                        ><span>Subtotal</span>
+                            : <span style={{ fontWeight: 'bold' }}>${cartState.subtotal.toFixed(2)} </span></p>
+                        <p
+                            style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                        ><span>Tax</span>
+                            : <span style={{ fontWeight: 'bold' }}>${cartState.tax.toFixed(2)} </span></p>
+                        <div
+                            style={{ width: '100%', height: '1px', background: '#E0E0E0' }}
+                        ></div>
+                        <p
+                            style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                        ><span>Total</span>
+                            : <span style={{ fontWeight: 'bold' }}>${cartState.total.toFixed(2)} </span></p>
+                    </div>
+                </div>
+                <Button type="primary" block style={{ width: '100%', fontWeight: 'bold' }}>Finish and Pay</Button>
+            </div>
+        </div>
     );
 };
 
