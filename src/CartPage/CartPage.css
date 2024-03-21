@@ -80,6 +80,12 @@
     gap: 1rem;
 }
 
+.cart-items-list {
+    overflow-y: scroll;
+    width: 100%;
+    max-height: 300px;
+    padding: 1rem;
+}
 
 
 @media all and (max-width: 1300px) {
