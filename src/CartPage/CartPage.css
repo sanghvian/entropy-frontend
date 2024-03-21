@@ -82,7 +82,7 @@
 
 
 
-@media all and (max-width: 800px) {
+@media all and (max-width: 1300px) {
     .cart-page-container {
         flex-direction: column;
         align-items: center;
