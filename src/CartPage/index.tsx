@@ -174,7 +174,7 @@ const CartPage: React.FC = () => {
                                                 src={item.matched_img}
                                                 alt="Product"
                                                 style={{
-                                                    width: '40px'
+                                                    width: '60px'
                                                 }} />
                                         </div>
                                         <div
