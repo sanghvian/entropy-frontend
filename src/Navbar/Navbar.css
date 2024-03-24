@@ -1,0 +1,18 @@
+.navbar-container {
+    background-color: #C8D6EC;
+    height: 10vh;
+    width: 100%;
+    display: flex;
+    padding: 1.2rem;
+    justify-content: space-between;
+}
+
+.navbar-container .ultron-logo {
+    height: 6vh
+}
+
+.navbar-container .cart-logo {
+    height: 4.5vh;
+    display: flex;
+    align-items: center;
+}
