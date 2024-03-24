@@ -23,6 +23,19 @@ type CartItem = {
     perUnitCost: number;
 };
 
+// Utility function to check if a string is a valid URL
+function isValidHttpUrl(string: string) {
+    let url;
+
+    try {
+        url = new URL(string);
+    } catch (_) {
+        return false;
+    }
+
+    return url.protocol === "http:" || url.protocol === "https:";
+}
+
 const cartItemsMockData = [
     {
         upc: "1234567890",
@@ -47,13 +60,21 @@ const cartItemsMockData = [
         perUnitCost: 1.99,
         numUnits: 1,
         matched_img: "https://testbucket1841.s3.ap-south-1.amazonaws.com/dump/m&m.png"
+    },
+    {
+        upc: "",
+        name: "Lays - Hot and Sweet",
+        fact: "500cal",
+        perUnitCost: 5.99,
+        numUnits: 1,
+        matched_img: "https://purepng.com/public/uploads/thumbnail//purepng.com-lays-classic-potato-chips-packetfood-lays-potato-chips-941524637186i1maf.png"
     }
 
 ]
 
 // Initialize with mock data for demonstration
 const initialState: CartState = {
-    items: cartItemsMockData,
+    items: [],
     subtotal: 0,
     tax: 0,
     total: 0,
@@ -69,17 +90,40 @@ const calculateTotals = (items: CartItem[]): CartState => {
 const CartPage: React.FC = () => {
     const [cartState, setCartState] = useState<CartState>(calculateTotals(initialState.items));
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const [displayItems, setDisplayItems] = useState(false);
+
+    const handleAddToCart = () => {
+        // This function will be called when the "Add to Cart" button is clicked
+        // Set displayItems to true and set cart items based on some condition or action, like a WebSocket message
+        console.log('Adding to cart', cartState);
+        setCartState(calculateTotals(cartState.items)); // Update this line as per your actual logic for adding items
+        setDisplayItems(true); // This will allow the items to be displayed in the cart
+    };
 
     useEffect(() => {
         // WebSocket for detected products
         const productStream = new WebSocket('ws://localhost:9001');
         productStream.onmessage = (event) => {
-            const detectedItem: CartItem = JSON.parse(event.data);
+            const prodMessages: Partial<CartItem>[] = JSON.parse(event.data);
             // Add the detected item to the cart (simplified logic)
-            if (cartState.items.length < 3) {
-                const newItems = [...cartState.items, detectedItem];
-                setCartState(calculateTotals(newItems));
-            }
+            prodMessages.forEach((detectedItem: Partial<CartItem>) => {
+                if (detectedItem.matched_img) {
+                    const doesDetectedItemExistInCart = cartState.items.some((cartItem) => cartItem.upc === detectedItem.upc);
+                    if (!doesDetectedItemExistInCart) {
+                        setCartState(currentState => {
+                            const newItems = [{
+                                name: "Taco - 3 pack",
+                                upc: detectedItem.upc!,
+                                fact: "400g",
+                                perUnitCost: 3.99,
+                                numUnits: 1,
+                                matched_img: detectedItem.matched_img!
+                            }, ...currentState.items];
+                            return calculateTotals(newItems);
+                        });
+                    }
+                }
+            })
         };
 
         // WebSocket for camera feed
@@ -129,104 +173,113 @@ const CartPage: React.FC = () => {
                     }}></canvas>
 
             </div>
+            <Button type="primary" block onClick={handleAddToCart} style={{ margin: '10px 0', fontWeight: 'bold' }}>
+                Add to Cart
+            </Button>
             <div className='cart-page-details'>
                 <div className='cart-page-cost'>
-                    <h3 style={{ color: '##002F8E', margin: '0', marginBottom: '1.2rem' }}>CART</h3>
-                    {cartState.items.map((item, index) => (
-                        <div className='cart-item'>
-                            <div
-                                style={{ display: 'flex' }}
-                            >
-                                <div
-                                    style={{
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        justifyContent: 'center',
-                                        alignItems: 'center',
-                                        background: "#E8EFFA",
-                                        padding: '0.5rem',
-                                        marginRight: '0.5rem',
-                                    }}
-                                >
-                                    <img
-                                        src={item.matched_img}
-                                        alt="Product"
-                                        style={{
-                                            width: '40px'
-                                        }} />
-                                </div>
-                                <div
-                                    style={{
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        justifyContent: 'flex-start',
-                                        alignItems: 'flex-start'
-                                    }}
-                                >
-                                    <Text strong>{item.name} - {item.fact}</Text>
-                                    <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
-                                        <Button
-                                            style={{
-                                                borderRadius: '50%',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                background: '#90A0B7',
-                                                color: 'white',
-                                                padding: '0.5rem'
-                                            }}
-                                            onClick={() => {
-                                                // Example function to handle decrementing item units
-                                                const updatedItems = cartState.items.map((cartItem) =>
-                                                    cartItem.upc === item.upc ? { ...cartItem, numUnits: Math.max(cartItem.numUnits - 1, 0) } : cartItem
-                                                ).filter((cartItem) => cartItem.numUnits > 0);
-                                                setCartState(calculateTotals(updatedItems));
-                                            }}><svg xmlns="http://www.w3.org/2000/svg" width="11" height="3" viewBox="0 0 11 3" fill="none">
-                                                <path d="M9.81299 1.5H1.13007" stroke="white" stroke-width="2" stroke-linecap="round" />
-                                            </svg></Button>
-                                        &nbsp;
-                                        <Text>{item.numUnits}</Text>
-                                        &nbsp;
-                                        <Button
-                                            style={{
-                                                borderRadius: '50%',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                background: '#90A0B7',
-                                                color: 'white',
-                                                padding: '0.5rem'
-                                            }}
-                                            onClick={() => {
-                                                // Example function to handle incrementing item units
-                                                const updatedItems = cartState.items.map((cartItem) =>
-                                                    cartItem.upc === item.upc ? { ...cartItem, numUnits: cartItem.numUnits + 1 } : cartItem
-                                                );
-                                                setCartState(calculateTotals(updatedItems));
-                                            }}><svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 11 11" fill="none">
-                                                <path d="M9.95876 5.5377H1.17285" stroke="white" stroke-width="2" stroke-linecap="round" />
-                                                <path d="M5.56586 9.93939V1.1362" stroke="white" stroke-width="2" stroke-linecap="round" />
-                                            </svg></Button>
+                    <div style={{ width: '100%' }}>
 
+                        <h3 style={{ color: '##002F8E', margin: '0', marginBottom: '1.2rem' }}>CART</h3>
+                        <div className='cart-items-list'>
+                            {displayItems && cartState.items.map((item, index) => (
+                                <div className='cart-item'>
+                                    <div
+                                        style={{ display: 'flex' }}
+                                    >
+                                        <div
+                                            style={{
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                justifyContent: 'center',
+                                                alignItems: 'center',
+                                                background: "#E8EFFA",
+                                                padding: '0.5rem',
+                                                marginRight: '0.5rem',
+                                            }}
+                                        >
+                                            <img
+                                                src={item.matched_img}
+                                                alt="Product"
+                                                style={{
+                                                    width: '85px'
+                                                }} />
+                                        </div>
+                                        <div
+                                            style={{
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                justifyContent: 'flex-start',
+                                                alignItems: 'flex-start'
+                                            }}
+                                        >
+                                            <Text strong style={{ fontSize: '1.5rem' }}>{item.name} - {item.fact}</Text>
+                                            <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
+                                                <Button
+                                                    style={{
+                                                        borderRadius: '50%',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        background: '#90A0B7',
+                                                        color: 'white',
+                                                        padding: '0.5rem'
+                                                    }}
+                                                    onClick={() => {
+                                                        // Example function to handle decrementing item units
+                                                        const updatedItems = cartState.items.map((cartItem) =>
+                                                            cartItem.upc === item.upc ? { ...cartItem, numUnits: Math.max(cartItem.numUnits - 1, 0) } : cartItem
+                                                        ).filter((cartItem) => cartItem.numUnits > 0);
+                                                        setCartState(calculateTotals(updatedItems));
+                                                    }}><svg xmlns="http://www.w3.org/2000/svg" width="11" height="3" viewBox="0 0 11 3" fill="none">
+                                                        <path d="M9.81299 1.5H1.13007" stroke="white" stroke-width="2" stroke-linecap="round" />
+                                                    </svg></Button>
+                                                &nbsp; &nbsp;
+                                                <Text style={{ fontSize: '2rem' }}>{item.numUnits}</Text>
+                                                &nbsp; &nbsp;
+                                                <Button
+                                                    style={{
+                                                        borderRadius: '50%',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        background: '#90A0B7',
+                                                        color: 'white',
+                                                        padding: '0.5rem'
+                                                    }}
+                                                    onClick={() => {
+                                                        // Example function to handle incrementing item units
+                                                        const updatedItems = cartState.items.map((cartItem) =>
+                                                            cartItem.upc === item.upc ? { ...cartItem, numUnits: cartItem.numUnits + 1 } : cartItem
+                                                        );
+                                                        setCartState(calculateTotals(updatedItems));
+                                                    }}><svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 11 11" fill="none">
+                                                        <path d="M9.95876 5.5377H1.17285" stroke="white" stroke-width="2" stroke-linecap="round" />
+                                                        <path d="M5.56586 9.93939V1.1362" stroke="white" stroke-width="2" stroke-linecap="round" />
+                                                    </svg></Button>
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div
+                                        style={{
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'flex-end'
+                                        }}
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="32" viewBox="0 0 31 32" fill="none">
+                                            <path d="M23.249 23.7523L7.75367 8.25695" stroke="#4F4F4F" stroke-width="3" stroke-linecap="round" />
+                                            <path d="M7.77145 23.7581L23.2642 8.26544" stroke="#4F4F4F" stroke-width="3" stroke-linecap="round" />
+                                        </svg>
+                                        <Text style={{ fontSize: '1.5rem' }} strong>${(item.numUnits * item.perUnitCost).toFixed(2)}</Text>
                                     </div>
                                 </div>
-                            </div>
-                            <div
-                                style={{
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'flex-end'
-                                }}
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="32" viewBox="0 0 31 32" fill="none">
-                                    <path d="M23.249 23.7523L7.75367 8.25695" stroke="#4F4F4F" stroke-width="3" stroke-linecap="round" />
-                                    <path d="M7.77145 23.7581L23.2642 8.26544" stroke="#4F4F4F" stroke-width="3" stroke-linecap="round" />
-                                </svg>
-                                <Text strong>${(item.numUnits * item.perUnitCost).toFixed(2)}</Text>
-                            </div>
+                            ))}
                         </div>
-                    ))}
+                    </div>
+
                     <div style={{
                         justifySelf: 'flex-end',
                         width: '100%',
