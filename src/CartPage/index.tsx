@@ -40,6 +40,14 @@ function isValidHttpUrl(string: string) {
 const cartItemsMockData = [
     {
         upc: "1234567890",
+        name: "Tacos",
+        fact: "450g",
+        perUnitCost: 3.59,
+        numUnits: 1,
+        matched_img: "https://testbucket1841.s3.ap-south-1.amazonaws.com/dump/dorito.png"
+    },
+    {
+        upc: "1234567890",
         name: "Doritos Nacho Cheese",
         fact: "400g",
         perUnitCost: 3.99,
@@ -107,16 +115,16 @@ const CartPage: React.FC = () => {
         productStream.onmessage = (event) => {
             const prodMessages: Partial<CartItem>[] = JSON.parse(event.data);
             // Add the detected item to the cart (simplified logic)
-            prodMessages.forEach((detectedItem: Partial<CartItem>) => {
+            prodMessages.forEach((detectedItem: Partial<CartItem>, i: number) => {
                 if (detectedItem.matched_img) {
                     const doesDetectedItemExistInCart = cartState.items.some((cartItem) => cartItem.upc === detectedItem.upc);
                     if (!doesDetectedItemExistInCart) {
-                        setCartState(currentState => {
+                        setCartState((currentState) => {
                             const newItems = [{
-                                name: "Taco - 3 pack",
+                                name: detectedItem.upc || cartItemsMockData[i].name,
                                 upc: detectedItem.upc!,
-                                fact: "400g",
-                                perUnitCost: 3.99,
+                                fact: cartItemsMockData[i].fact,
+                                perUnitCost: cartItemsMockData[i].perUnitCost,
                                 numUnits: 1,
                                 matched_img: detectedItem.matched_img!
                             }, ...currentState.items];
