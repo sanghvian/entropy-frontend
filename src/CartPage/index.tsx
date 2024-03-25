@@ -121,7 +121,7 @@ const CartPage: React.FC = () => {
                     if (!doesDetectedItemExistInCart) {
                         setCartState((currentState) => {
                             const newItems = [{
-                                name: cartItemsMockData[i].name,
+                                name: detectedItem.upc || cartItemsMockData[i].name,
                                 upc: detectedItem.upc!,
                                 fact: cartItemsMockData[i].fact,
                                 perUnitCost: cartItemsMockData[i].perUnitCost,
