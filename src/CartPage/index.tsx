@@ -103,7 +103,7 @@ const CartPage: React.FC = () => {
 
     const handleAddToCart = () => {
         // This function will be called when the "Add to Cart" button is clicked
-        // Set displayItems to true and set cart items based on some condition or action, like a WebSocket message
+        // Set displayItems to true and set cart items based on some condition or action, like a WebSocket message2
         console.log('Adding to cart', cartState);
         setCartState(calculateTotals(cartState.items)); // Update this line as per your actual logic for adding items
         setDisplayItems(true); // This will allow the items to be displayed in the cart
@@ -111,7 +111,7 @@ const CartPage: React.FC = () => {
 
     useEffect(() => {
         // WebSocket for detected products
-        const productStream = new WebSocket('ws://localhost:9001');
+        const productStream = new WebSocket(process.env.REACT_APP_PRODUCTS_STREAM!);
         productStream.onmessage = (event) => {
             const prodMessages: Partial<CartItem>[] = JSON.parse(event.data);
             // Add the detected item to the cart (simplified logic)
@@ -136,7 +136,7 @@ const CartPage: React.FC = () => {
         };
 
         // WebSocket for camera feed
-        const videoStream = new WebSocket('ws://localhost:9000');
+        const videoStream = new WebSocket(process.env.REACT_APP_VIDEO_STREAM!);
         videoStream.onmessage = async (event) => {
             const blob = new Blob([event.data], { type: "image/jpeg" });
             const image = new Image();
@@ -184,7 +184,12 @@ const CartPage: React.FC = () => {
                         }}></canvas>
 
                 </div>
-                <Button type="primary" block onClick={handleAddToCart} style={{ margin: '10px 0', fontWeight: 'bold' }}>
+                <Button type="primary" block onClick={handleAddToCart} style={{
+                    margin:
+                        '10px 0',
+                    height: '5rem',
+                    fontWeight: 'bold'
+                }}>
                     Add to Cart
                 </Button>
                 <div className='cart-page-details'>
@@ -312,7 +317,7 @@ const CartPage: React.FC = () => {
                             ><span>Total</span><span style={{ fontWeight: 'bold' }}>${cartState.total.toFixed(2)} </span></p>
                         </div>}
                     </div>
-                    <Button type="primary" block style={{ width: '100%', fontWeight: 'bold' }}>Finish and Pay</Button>
+                    <Button type="primary" block style={{ width: '100%', fontWeight: 'bold', height: '3rem' }}>Finish and Pay</Button>
                 </div>
             </div>
         </>
