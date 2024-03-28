@@ -18,7 +18,9 @@ const CheckoutPage = () => {
                     <div style={{ width: '100%' }}>
 
                         <h3 style={{ color: '##002F8E', margin: '0', marginBottom: '1.2rem' }}>CART</h3>
-                        <div className='cart-items-list'>
+                        <div className='cart-items-list' style={{
+                            maxHeight: '750px',
+                        }}>
                             {cartState.items.map((item, index) => (
                                 <div key={index} className='cart-item'>
                                     <div

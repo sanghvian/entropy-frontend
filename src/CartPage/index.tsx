@@ -2,132 +2,38 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Layout, Button, Typography } from 'antd';
 import './CartPage.css';
 import Navbar from '../Navbar';
-import { useCart } from '../CartContex';
+import { CartItem, useCart } from '../CartContex';
 
-const { Header, Content } = Layout;
 const { Text } = Typography;
-
-// type CartState = {
-//     items: CartItem[];
-//     subtotal: number;
-//     tax: number;
-//     total: number;
-// };
-
-
-// Assuming CartItem structure matches the one you receive from the WebSocket
-type CartItem = {
-    name: string;
-    upc: string;
-    fact: string,
-    matched_img: string;
-    numUnits: number;
-    perUnitCost: number;
-};
-
-// Utility function to check if a string is a valid URL
-// function isValidHttpUrl(string: string) {
-//     let url;
-
-//     try {
-//         url = new URL(string);
-//     } catch (_) {
-//         return false;
-//     }
-
-//     return url.protocol === "http:" || url.protocol === "https:";
-// }
-
-const cartItemsMockData = [
-    {
-        upc: "1234567890",
-        name: "Tacos",
-        fact: "450g",
-        perUnitCost: 3.59,
-        numUnits: 1,
-        matched_img: "https://testbucket1841.s3.ap-south-1.amazonaws.com/dump/dorito.png"
-    },
-    {
-        upc: "1234567890",
-        name: "Doritos Nacho Cheese",
-        fact: "400g",
-        perUnitCost: 3.99,
-        numUnits: 1,
-        matched_img: "https://testbucket1841.s3.ap-south-1.amazonaws.com/dump/dorito.png"
-    },
-    {
-        upc: "028400329125",
-        name: "Oreos",
-        fact: "Party-Size",
-        perUnitCost: 4.99,
-        numUnits: 1,
-        matched_img: "https://testbucket1841.s3.ap-south-1.amazonaws.com/dump/oreo.png"
-    },
-    {
-        upc: "",
-        name: "Peanut M&Ms",
-        fact: "1.74oz",
-        perUnitCost: 1.99,
-        numUnits: 1,
-        matched_img: "https://testbucket1841.s3.ap-south-1.amazonaws.com/dump/m&m.png"
-    },
-    {
-        upc: "",
-        name: "Lays - Hot and Sweet",
-        fact: "500cal",
-        perUnitCost: 5.99,
-        numUnits: 1,
-        matched_img: "https://purepng.com/public/uploads/thumbnail//purepng.com-lays-classic-potato-chips-packetfood-lays-potato-chips-941524637186i1maf.png"
-    }
-
-]
-
-// // Initialize with mock data for demonstration
-// const initialState: CartState = {
-//     items: [],
-//     subtotal: 0,
-//     tax: 0,
-//     total: 0,
-// };
-
-// const calculateTotals = (items: CartItem[]): CartState => {
-//     const subtotal = items.reduce((acc, item) => acc + item.numUnits * item.perUnitCost, 0);
-//     const tax = subtotal * 0.1; // Assuming a 10% tax rate
-//     const total = subtotal + tax;
-//     return { items, subtotal, tax, total };
-// };
 
 const CartPage: React.FC = () => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const { cartState, addToCart, calculateTotals } = useCart();
     const [stagedItems, setStagedItems] = useState<CartItem[]>([]);
-    const [displayItems, setDisplayItems] = useState(false);
 
     useEffect(() => {
         // Example WebSocket connection for detected products
-        const productStream = new WebSocket('ws://example.com/products');
-        productStream.onmessage = (event) => {
-            const prodMessages: Partial<CartItem>[] = JSON.parse(event.data);
-            // Add the detected item to the cart (simplified logic)
-            prodMessages.forEach((detectedItem: Partial<CartItem>, i: number) => {
-                if (detectedItem.matched_img) {
-                    const doesDetectedItemExistInCart = cartState.items.some((cartItem) => cartItem.upc === detectedItem.upc);
-                    if (!doesDetectedItemExistInCart) {
-                        setStagedItems((currentState) => {
-                            const newItems = [{
-                                name: detectedItem.upc || cartItemsMockData[i].name,
-                                upc: detectedItem.upc!,
-                                fact: cartItemsMockData[i].fact,
-                                perUnitCost: cartItemsMockData[i].perUnitCost,
-                                numUnits: 1,
-                                matched_img: detectedItem.matched_img!
-                            }, ...currentState];
-                            return newItems;
-                        });
-                    }
+        const productStream = new WebSocket(process.env.REACT_APP_PRODUCTS_STREAM!);
+
+        productStream.onmessage = async (event) => {
+            const prodMessages: CartItem[] = JSON.parse(event.data);
+            await prodMessages.forEach((prodMessage) => {
+                if (prodMessage.upc) {
+                    setStagedItems((currentStagedItems) => {
+                        const itemExistsIndex = currentStagedItems.findIndex((item) => item.upc === prodMessage.upc);
+                        if (itemExistsIndex > -1) {
+                            // If item already exists in staged items, don't add it again
+                            return currentStagedItems;
+                        } else {
+                            // Add new item to staged items
+                            return [...currentStagedItems, { ...prodMessage, numUnits: 1, perUnitCost: Math.floor(Math.random() * 10) }];
+                        }
+                    });
                 }
-            })
+            }
+            );
         };
+
 
         // WebSocket for camera feed
         const videoStream = new WebSocket(process.env.REACT_APP_VIDEO_STREAM!);
@@ -165,79 +71,15 @@ const CartPage: React.FC = () => {
             videoStream.close();
         };
 
-    }, [cartState.items]);
+    });
 
     const handleAddToCart = () => {
-        // Add all staged items to the global cart state
-        stagedItems.forEach(item => {
+        stagedItems.forEach((item) => {
             addToCart(item);
         });
-        // Optionally, clear the staged items if they should no longer be added again
+        // Clear staged items after adding to cart
         setStagedItems([]);
-        setDisplayItems(true); // Assuming this is used to display the cart items
     };
-    // useEffect(() => {
-    //     // WebSocket for detected products
-    //     const productStream = new WebSocket(process.env.REACT_APP_PRODUCTS_STREAM!);
-    //     productStream.onmessage = (event) => {
-    //         const prodMessages: Partial<CartItem>[] = JSON.parse(event.data);
-    //         // Add the detected item to the cart (simplified logic)
-    //         prodMessages.forEach((detectedItem: Partial<CartItem>, i: number) => {
-    //             if (detectedItem.matched_img) {
-    //                 const doesDetectedItemExistInCart = cartState.items.some((cartItem) => cartItem.upc === detectedItem.upc);
-    //                 if (!doesDetectedItemExistInCart) {
-    //                     setCartState((currentState) => {
-    //                         const newItems = [{
-    //                             name: detectedItem.upc || cartItemsMockData[i].name,
-    //                             upc: detectedItem.upc!,
-    //                             fact: cartItemsMockData[i].fact,
-    //                             perUnitCost: cartItemsMockData[i].perUnitCost,
-    //                             numUnits: 1,
-    //                             matched_img: detectedItem.matched_img!
-    //                         }, ...currentState.items];
-    //                         return calculateTotals(newItems);
-    //                     });
-    //                 }
-    //             }
-    //         })
-    //     };
-
-    //     // WebSocket for camera feed
-    //     const videoStream = new WebSocket(process.env.REACT_APP_VIDEO_STREAM!);
-    //     videoStream.onmessage = async (event) => {
-    //         const blob = new Blob([event.data], { type: "image/jpeg" });
-    //         const image = new Image();
-    //         image.src = URL.createObjectURL(blob);
-    //         await image.decode(); // Wait for image to load
-
-    //         const canvas = canvasRef.current;
-    //         if (canvas) {
-    //             const ctx = canvas.getContext("2d");
-    //             if (ctx) {
-    //                 const image_ar = image.width / image.height;
-    //                 canvas.width = canvas.clientWidth;
-    //                 canvas.height = canvas.clientHeight;
-    //                 const canvas_ar = canvas.width / canvas.height;
-
-    //                 let draw_width = canvas.width;
-    //                 let draw_height = canvas.height;
-    //                 if (image_ar > canvas_ar) {
-    //                     draw_height = draw_width / image_ar;
-    //                 } else {
-    //                     draw_width = draw_height * image_ar;
-    //                 }
-
-    //                 ctx.drawImage(image, 0, 0, draw_width, draw_height);
-    //                 URL.revokeObjectURL(image.src); // Clean up
-    //             }
-    //         }
-    //     };
-
-    //     return () => {
-    //         productStream.close();
-    //         videoStream.close();
-    //     };
-    // }, [cartState.items]);
 
     return (
         <>
@@ -249,7 +91,7 @@ const CartPage: React.FC = () => {
                             position: 'relative', top: '5%', left: '5%',
                             width: '90%', height: '90%'
                         }}></canvas>
-                    {displayItems && <Text>Items scanned</Text>}
+                    {cartState.items.length > 0 && <Text>Items scanned</Text>}
 
                 </div>
                 <Button type="primary" block onClick={handleAddToCart} style={{
@@ -266,7 +108,7 @@ const CartPage: React.FC = () => {
 
                             <h3 style={{ color: '##002F8E', margin: '0', marginBottom: '1.2rem' }}>CART</h3>
                             <div className='cart-items-list'>
-                                {displayItems && cartState.items.map((item, index) => (
+                                {cartState.items.length > 0 && cartState.items.map((item, index) => (
                                     <div key={index} className='cart-item'>
                                         <div
                                             style={{ display: 'flex' }}
@@ -297,7 +139,7 @@ const CartPage: React.FC = () => {
                                                     alignItems: 'flex-start'
                                                 }}
                                             >
-                                                <Text strong style={{ fontSize: '1.5rem' }}>{item.name}
+                                                <Text strong style={{ fontSize: '1.5rem' }}>{item.upc}
                                                     {/* - {item.fact} */}
                                                 </Text>
                                                 <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
@@ -363,7 +205,7 @@ const CartPage: React.FC = () => {
 
                                                 }}
                                             >
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="32" viewBox="0 0 31 32" fill="none">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="64" viewBox="0 0 31 64" fill="none">
                                                     <path d="M23.249 23.7523L7.75367 8.25695" stroke="#4F4F4F" stroke-width="3" stroke-linecap="round" />
                                                     <path d="M7.77145 23.7581L23.2642 8.26544" stroke="#4F4F4F" stroke-width="3" stroke-linecap="round" />
                                                 </svg>
@@ -375,7 +217,7 @@ const CartPage: React.FC = () => {
                             </div>
                         </div>
 
-                        {displayItems && <div style={{
+                        {cartState.items.length > 0 && <div style={{
                             justifySelf: 'flex-end',
                             width: '100%',
                             display: 'flex',
@@ -396,7 +238,7 @@ const CartPage: React.FC = () => {
                             ><span>Total</span><span style={{ fontWeight: 'bold' }}>${cartState.total.toFixed(2)} </span></p>
                         </div>}
                     </div>
-                    <Button type="primary" block style={{ width: '100%', fontWeight: 'bold', height: '3rem' }}>Finish and Pay</Button>
+                    {/* <Button type="primary" block style={{ width: '100%', fontWeight: 'bold', height: '3rem' }}>Finish and Pay</Button> */}
                 </div>
             </div>
         </>
