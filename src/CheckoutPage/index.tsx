@@ -52,7 +52,7 @@ const CheckoutPage = () => {
                                                 alignItems: 'flex-start'
                                             }}
                                         >
-                                            <Text strong style={{ fontSize: '1.5rem' }}>{item.name}
+                                            <Text strong style={{ fontSize: '1.5rem' }}>{item.upc}
                                                 {/* - {item.fact} */}
                                             </Text>
                                             <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
