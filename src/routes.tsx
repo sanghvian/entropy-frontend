@@ -10,10 +10,6 @@ export const router = createBrowserRouter([
         element: <App />,
         errorElement: <ErrorPage />,
         children: [
-            // {
-            //     path: "mic",
-            //     element: <AudioRecordPage />,
-            // },
             {
                 path: "",
                 element: <HomePage />

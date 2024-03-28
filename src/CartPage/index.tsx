@@ -2,16 +2,17 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Layout, Button, Typography } from 'antd';
 import './CartPage.css';
 import Navbar from '../Navbar';
+import { useCart } from '../CartContex';
 
 const { Header, Content } = Layout;
 const { Text } = Typography;
 
-type CartState = {
-    items: CartItem[];
-    subtotal: number;
-    tax: number;
-    total: number;
-};
+// type CartState = {
+//     items: CartItem[];
+//     subtotal: number;
+//     tax: number;
+//     total: number;
+// };
 
 
 // Assuming CartItem structure matches the one you receive from the WebSocket
@@ -25,17 +26,17 @@ type CartItem = {
 };
 
 // Utility function to check if a string is a valid URL
-function isValidHttpUrl(string: string) {
-    let url;
+// function isValidHttpUrl(string: string) {
+//     let url;
 
-    try {
-        url = new URL(string);
-    } catch (_) {
-        return false;
-    }
+//     try {
+//         url = new URL(string);
+//     } catch (_) {
+//         return false;
+//     }
 
-    return url.protocol === "http:" || url.protocol === "https:";
-}
+//     return url.protocol === "http:" || url.protocol === "https:";
+// }
 
 const cartItemsMockData = [
     {
@@ -81,37 +82,30 @@ const cartItemsMockData = [
 
 ]
 
-// Initialize with mock data for demonstration
-const initialState: CartState = {
-    items: [],
-    subtotal: 0,
-    tax: 0,
-    total: 0,
-};
+// // Initialize with mock data for demonstration
+// const initialState: CartState = {
+//     items: [],
+//     subtotal: 0,
+//     tax: 0,
+//     total: 0,
+// };
 
-const calculateTotals = (items: CartItem[]): CartState => {
-    const subtotal = items.reduce((acc, item) => acc + item.numUnits * item.perUnitCost, 0);
-    const tax = subtotal * 0.1; // Assuming a 10% tax rate
-    const total = subtotal + tax;
-    return { items, subtotal, tax, total };
-};
+// const calculateTotals = (items: CartItem[]): CartState => {
+//     const subtotal = items.reduce((acc, item) => acc + item.numUnits * item.perUnitCost, 0);
+//     const tax = subtotal * 0.1; // Assuming a 10% tax rate
+//     const total = subtotal + tax;
+//     return { items, subtotal, tax, total };
+// };
 
 const CartPage: React.FC = () => {
-    const [cartState, setCartState] = useState<CartState>(calculateTotals(initialState.items));
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const { cartState, addToCart, calculateTotals } = useCart();
+    const [stagedItems, setStagedItems] = useState<CartItem[]>([]);
     const [displayItems, setDisplayItems] = useState(false);
 
-    const handleAddToCart = () => {
-        // This function will be called when the "Add to Cart" button is clicked
-        // Set displayItems to true and set cart items based on some condition or action, like a WebSocket message2
-        console.log('Adding to cart', cartState);
-        setCartState(calculateTotals(cartState.items)); // Update this line as per your actual logic for adding items
-        setDisplayItems(true); // This will allow the items to be displayed in the cart
-    };
-
     useEffect(() => {
-        // WebSocket for detected products
-        const productStream = new WebSocket(process.env.REACT_APP_PRODUCTS_STREAM!);
+        // Example WebSocket connection for detected products
+        const productStream = new WebSocket('ws://example.com/products');
         productStream.onmessage = (event) => {
             const prodMessages: Partial<CartItem>[] = JSON.parse(event.data);
             // Add the detected item to the cart (simplified logic)
@@ -119,7 +113,7 @@ const CartPage: React.FC = () => {
                 if (detectedItem.matched_img) {
                     const doesDetectedItemExistInCart = cartState.items.some((cartItem) => cartItem.upc === detectedItem.upc);
                     if (!doesDetectedItemExistInCart) {
-                        setCartState((currentState) => {
+                        setStagedItems((currentState) => {
                             const newItems = [{
                                 name: detectedItem.upc || cartItemsMockData[i].name,
                                 upc: detectedItem.upc!,
@@ -127,8 +121,8 @@ const CartPage: React.FC = () => {
                                 perUnitCost: cartItemsMockData[i].perUnitCost,
                                 numUnits: 1,
                                 matched_img: detectedItem.matched_img!
-                            }, ...currentState.items];
-                            return calculateTotals(newItems);
+                            }, ...currentState];
+                            return newItems;
                         });
                     }
                 }
@@ -170,7 +164,80 @@ const CartPage: React.FC = () => {
             productStream.close();
             videoStream.close();
         };
+
     }, [cartState.items]);
+
+    const handleAddToCart = () => {
+        // Add all staged items to the global cart state
+        stagedItems.forEach(item => {
+            addToCart(item);
+        });
+        // Optionally, clear the staged items if they should no longer be added again
+        setStagedItems([]);
+        setDisplayItems(true); // Assuming this is used to display the cart items
+    };
+    // useEffect(() => {
+    //     // WebSocket for detected products
+    //     const productStream = new WebSocket(process.env.REACT_APP_PRODUCTS_STREAM!);
+    //     productStream.onmessage = (event) => {
+    //         const prodMessages: Partial<CartItem>[] = JSON.parse(event.data);
+    //         // Add the detected item to the cart (simplified logic)
+    //         prodMessages.forEach((detectedItem: Partial<CartItem>, i: number) => {
+    //             if (detectedItem.matched_img) {
+    //                 const doesDetectedItemExistInCart = cartState.items.some((cartItem) => cartItem.upc === detectedItem.upc);
+    //                 if (!doesDetectedItemExistInCart) {
+    //                     setCartState((currentState) => {
+    //                         const newItems = [{
+    //                             name: detectedItem.upc || cartItemsMockData[i].name,
+    //                             upc: detectedItem.upc!,
+    //                             fact: cartItemsMockData[i].fact,
+    //                             perUnitCost: cartItemsMockData[i].perUnitCost,
+    //                             numUnits: 1,
+    //                             matched_img: detectedItem.matched_img!
+    //                         }, ...currentState.items];
+    //                         return calculateTotals(newItems);
+    //                     });
+    //                 }
+    //             }
+    //         })
+    //     };
+
+    //     // WebSocket for camera feed
+    //     const videoStream = new WebSocket(process.env.REACT_APP_VIDEO_STREAM!);
+    //     videoStream.onmessage = async (event) => {
+    //         const blob = new Blob([event.data], { type: "image/jpeg" });
+    //         const image = new Image();
+    //         image.src = URL.createObjectURL(blob);
+    //         await image.decode(); // Wait for image to load
+
+    //         const canvas = canvasRef.current;
+    //         if (canvas) {
+    //             const ctx = canvas.getContext("2d");
+    //             if (ctx) {
+    //                 const image_ar = image.width / image.height;
+    //                 canvas.width = canvas.clientWidth;
+    //                 canvas.height = canvas.clientHeight;
+    //                 const canvas_ar = canvas.width / canvas.height;
+
+    //                 let draw_width = canvas.width;
+    //                 let draw_height = canvas.height;
+    //                 if (image_ar > canvas_ar) {
+    //                     draw_height = draw_width / image_ar;
+    //                 } else {
+    //                     draw_width = draw_height * image_ar;
+    //                 }
+
+    //                 ctx.drawImage(image, 0, 0, draw_width, draw_height);
+    //                 URL.revokeObjectURL(image.src); // Clean up
+    //             }
+    //         }
+    //     };
+
+    //     return () => {
+    //         productStream.close();
+    //         videoStream.close();
+    //     };
+    // }, [cartState.items]);
 
     return (
         <>
@@ -182,6 +249,7 @@ const CartPage: React.FC = () => {
                             position: 'relative', top: '5%', left: '5%',
                             width: '90%', height: '90%'
                         }}></canvas>
+                    {displayItems && <Text>Items scanned</Text>}
 
                 </div>
                 <Button type="primary" block onClick={handleAddToCart} style={{
@@ -229,7 +297,9 @@ const CartPage: React.FC = () => {
                                                     alignItems: 'flex-start'
                                                 }}
                                             >
-                                                <Text strong style={{ fontSize: '1.5rem' }}>{item.name} - {item.fact}</Text>
+                                                <Text strong style={{ fontSize: '1.5rem' }}>{item.name}
+                                                    {/* - {item.fact} */}
+                                                </Text>
                                                 <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
                                                     <Button
                                                         style={{
@@ -246,7 +316,7 @@ const CartPage: React.FC = () => {
                                                             const updatedItems = cartState.items.map((cartItem) =>
                                                                 cartItem.upc === item.upc ? { ...cartItem, numUnits: Math.max(cartItem.numUnits - 1, 0) } : cartItem
                                                             ).filter((cartItem) => cartItem.numUnits > 0);
-                                                            setCartState(calculateTotals(updatedItems));
+                                                            (calculateTotals(updatedItems));
                                                         }}><svg xmlns="http://www.w3.org/2000/svg" width="11" height="3" viewBox="0 0 11 3" fill="none">
                                                             <path d="M9.81299 1.5H1.13007" stroke="white" stroke-width="2" stroke-linecap="round" />
                                                         </svg></Button>
@@ -268,7 +338,7 @@ const CartPage: React.FC = () => {
                                                             const updatedItems = cartState.items.map((cartItem) =>
                                                                 cartItem.upc === item.upc ? { ...cartItem, numUnits: cartItem.numUnits + 1 } : cartItem
                                                             );
-                                                            setCartState(calculateTotals(updatedItems));
+                                                            (calculateTotals(updatedItems));
                                                         }}><svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 11 11" fill="none">
                                                             <path d="M9.95876 5.5377H1.17285" stroke="white" stroke-width="2" stroke-linecap="round" />
                                                             <path d="M5.56586 9.93939V1.1362" stroke="white" stroke-width="2" stroke-linecap="round" />
@@ -285,10 +355,19 @@ const CartPage: React.FC = () => {
                                                 alignItems: 'flex-end'
                                             }}
                                         >
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="32" viewBox="0 0 31 32" fill="none">
-                                                <path d="M23.249 23.7523L7.75367 8.25695" stroke="#4F4F4F" stroke-width="3" stroke-linecap="round" />
-                                                <path d="M7.77145 23.7581L23.2642 8.26544" stroke="#4F4F4F" stroke-width="3" stroke-linecap="round" />
-                                            </svg>
+                                            <div
+                                                onClick={() => {
+                                                    // Flow to remove the current detected item from the cart list
+                                                    const updatedItems = cartState.items.filter((cartItem) => cartItem.upc !== item.upc);
+                                                    (calculateTotals(updatedItems));
+
+                                                }}
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="32" viewBox="0 0 31 32" fill="none">
+                                                    <path d="M23.249 23.7523L7.75367 8.25695" stroke="#4F4F4F" stroke-width="3" stroke-linecap="round" />
+                                                    <path d="M7.77145 23.7581L23.2642 8.26544" stroke="#4F4F4F" stroke-width="3" stroke-linecap="round" />
+                                                </svg>
+                                            </div>
                                             <Text style={{ fontSize: '1.5rem' }} strong>${(item.numUnits * item.perUnitCost).toFixed(2)}</Text>
                                         </div>
                                     </div>
