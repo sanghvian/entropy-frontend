@@ -5,6 +5,8 @@
     display: flex;
     padding: 1.2rem;
     justify-content: space-between;
+    align-items: center;
+
 }
 
 .navbar-container .ultron-logo {
@@ -15,4 +17,23 @@
     height: 4.5vh;
     display: flex;
     align-items: center;
+}
+
+.cart-icon-container {
+    position: relative;
+    cursor: pointer;
+}
+
+.cart-badge {
+    position: absolute;
+    top: 0;
+    /* Adjust based on the actual size and position of your cart logo */
+    left: 0;
+    /* Adjust based on the actual size and position of your cart logo */
+    background-color: red;
+    color: white;
+    border-radius: 50%;
+    font-size: 12px;
+    padding: 2px 6px;
+    font-weight: bold;
 }

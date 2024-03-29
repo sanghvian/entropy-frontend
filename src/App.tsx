@@ -1,12 +1,15 @@
 // import 'antd/dist/antd.css';
 import './App.css';
 import { Outlet } from 'react-router-dom';
+import { CartProvider } from './CartContex';
 
 function App() {
   return (
-    <div className="App">
-      <Outlet />
-    </div>
+    <CartProvider>
+      <div className="App">
+        <Outlet />
+      </div>
+    </CartProvider>
   );
 }
 
