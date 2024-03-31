@@ -102,7 +102,9 @@ const CartPage: React.FC = () => {
                 }}>
                     Add to Cart
                 </Button>
-                <div className='cart-page-details'>
+                <div className='cart-page-details' style={{
+                    height: '80vh'
+                }}>
                     <div className='cart-page-cost'>
                         <div style={{ width: '100%' }}>
 
