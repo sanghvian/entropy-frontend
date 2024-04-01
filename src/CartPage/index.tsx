@@ -99,12 +99,11 @@ const CartPage: React.FC = () => {
                     display: 'flex',
                     justifyContent: 'stretch',
                     width: '100%',
+                    height: '6.5rem',
                     gap: '1rem',
                 }}>
                     <Button type="primary" block onClick={handleAddToCart} style={{
-                        margin:
-                            '10px 0',
-                        height: '5rem',
+                        height: '3rem',
                         fontWeight: 'bold'
                     }}>
                         Add to Cart
@@ -113,9 +112,7 @@ const CartPage: React.FC = () => {
                         // Clear cart function
                         calculateTotals([]);
                     }} style={{
-                        margin:
-                            '10px 0',
-                        height: '5rem',
+                        height: '3rem',
                         fontWeight: 'bold'
                     }}>
                         Clear Cart
