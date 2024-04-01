@@ -18,21 +18,21 @@ const CartPage: React.FC = () => {
         productStream.onmessage = async (event) => {
             const prodMessages: CartItem[] = JSON.parse(event.data);
             await prodMessages.forEach((prodMessage) => {
-                console.log(prodMessage)
                 if (prodMessage.upc) {
                     setStagedItems((currentStagedItems) => {
                         const itemExistsIndex = currentStagedItems.findIndex((item) => item.upc === prodMessage.upc);
                         if (itemExistsIndex > -1) {
-                            // If item already exists in staged items, don't add it again
-                            return currentStagedItems;
+                            // If item already exists in staged items, update the numUnits count
+                            const updatedItems = [...currentStagedItems];
+                            updatedItems[itemExistsIndex].numUnits += 1;
+                            return updatedItems;
                         } else {
                             // Add new item to staged items
                             return [...currentStagedItems, { ...prodMessage, numUnits: 1, perUnitCost: Math.floor(Math.random() * 10) }];
                         }
                     });
                 }
-            }
-            );
+            });
         };
 
 
@@ -95,14 +95,32 @@ const CartPage: React.FC = () => {
                     {cartState.items.length > 0 && <Text>Items scanned</Text>}
 
                 </div>
-                <Button type="primary" block onClick={handleAddToCart} style={{
-                    margin:
-                        '10px 0',
-                    height: '5rem',
-                    fontWeight: 'bold'
+                <div style={{
+                    display: 'flex',
+                    justifyContent: 'stretch',
+                    width: '100%',
+                    gap: '1rem',
                 }}>
-                    Add to Cart
-                </Button>
+                    <Button type="primary" block onClick={handleAddToCart} style={{
+                        margin:
+                            '10px 0',
+                        height: '5rem',
+                        fontWeight: 'bold'
+                    }}>
+                        Add to Cart
+                    </Button>
+                    <Button type="primary" block onClick={() => {
+                        // Clear cart function
+                        calculateTotals([]);
+                    }} style={{
+                        margin:
+                            '10px 0',
+                        height: '5rem',
+                        fontWeight: 'bold'
+                    }}>
+                        Clear Cart
+                    </Button>
+                </div>
                 <div className='cart-page-details' style={{
                     height: '80vh'
                 }}>
