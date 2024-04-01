@@ -18,6 +18,7 @@ const CartPage: React.FC = () => {
         productStream.onmessage = async (event) => {
             const prodMessages: CartItem[] = JSON.parse(event.data);
             await prodMessages.forEach((prodMessage) => {
+                console.log(prodMessage)
                 if (prodMessage.upc) {
                     setStagedItems((currentStagedItems) => {
                         const itemExistsIndex = currentStagedItems.findIndex((item) => item.upc === prodMessage.upc);
