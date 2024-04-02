@@ -8,7 +8,7 @@ const { Text } = Typography;
 
 const CartPage: React.FC = () => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const { cartState, addToCart, calculateTotals } = useCart();
+    const { cartState, setCartState, calculateTotals } = useCart();
     const [stagedItems, setStagedItems] = useState<CartItem[]>([]);
 
     useEffect(() => {
@@ -16,20 +16,30 @@ const CartPage: React.FC = () => {
         const productStream = new WebSocket(process.env.REACT_APP_PRODUCTS_STREAM!);
 
         productStream.onmessage = async (event) => {
-            const prodMessages: CartItem[] = JSON.parse(event.data);
-            await prodMessages.forEach((prodMessage) => {
-                if (prodMessage.upc) {
+            const prodMessages: CartItem[] = await JSON.parse(event.data);
+            if (prodMessages.length === 0) return;
+            console.log({ prodMessages })
+            prodMessages.forEach((prodMessage) => {
+                if (prodMessage.upc?.trim()) {
                     // setStagedItems((currentStagedItems) => {
-                    const itemExistsIndex = stagedItems.findIndex((item) => item.upc === prodMessage.upc);
+                    const itemExistsIndex = stagedItems.findIndex((item) => item.upc?.trim() === prodMessage.upc?.trim());
                     if (itemExistsIndex > -1) {
                         // If item already exists in staged items, update the numUnits count
                         const updatedItems = [...stagedItems];
-                        updatedItems[itemExistsIndex].numUnits += 1;
-                        setStagedItems(updatedItems);
+                        const numOfMaxItemsOfThatKindInCurrentSocket = prodMessages.filter((item) => item.upc?.trim() === prodMessage.upc?.trim()).length;
+                        if (updatedItems[itemExistsIndex].numUnits < numOfMaxItemsOfThatKindInCurrentSocket) {
+                            updatedItems[itemExistsIndex].numUnits += 1;
+                            setStagedItems(updatedItems);
+                        };
                     } else {
-                        const numOfUnitsForThisUpc = prodMessages.filter((item) => item.upc === prodMessage.upc).length;
+                        const numOfUnitsForThisUpc = prodMessages.filter((item) => item.upc?.trim() === prodMessage.upc?.trim()).length || 0;
                         // Add new item to staged items
-                        setStagedItems([...stagedItems, { ...prodMessage, numUnits: numOfUnitsForThisUpc, perUnitCost: Math.floor(Math.random() * 10) }]);
+                        setStagedItems([...stagedItems, {
+                            ...prodMessage, numUnits: numOfUnitsForThisUpc
+                            ,
+                            upc: prodMessage.upc?.trim(),
+                            perUnitCost: Math.floor(Math.random() * 10)
+                        }]);
                     }
                     // });
                 }
@@ -76,9 +86,33 @@ const CartPage: React.FC = () => {
     });
 
     const handleAddToCart = () => {
-        stagedItems.forEach((item) => {
-            addToCart(item);
+        // First, build a new list of items by incorporating the stagedItems into the existing cartState.items
+        const updatedItemsMap = new Map();
+
+        // Populate the map with existing cart items
+        cartState.items.forEach(item => {
+            updatedItemsMap.set(item.upc, { ...item });
         });
+
+        // Update or add the staged items
+        stagedItems.forEach(stagedItem => {
+            const item = updatedItemsMap.get(stagedItem.upc);
+            if (item) {
+                // If the item already exists, just update the numUnits
+                item.numUnits += stagedItem.numUnits;
+            } else {
+                // If it's a new item, add it to the map
+                updatedItemsMap.set(stagedItem.upc, { ...stagedItem, numUnits: stagedItem.numUnits });
+            }
+        });
+
+        // Convert the map back to an array
+        const finalItems = Array.from(updatedItemsMap.values());
+
+        // Now, we calculate the totals once, and update the cart state a single time
+        const newState = calculateTotals(finalItems);
+        setCartState(newState);
+
         // Clear staged items after adding to cart
         setStagedItems([]);
     };
@@ -105,7 +139,8 @@ const CartPage: React.FC = () => {
                 }}>
                     <Button type="primary" block onClick={handleAddToCart} style={{
                         height: '3rem',
-                        fontWeight: 'bold'
+                        fontWeight: 'bold',
+                        fontSize: '1.5rem'
                     }}>
                         Add to Cart
                     </Button>
@@ -114,7 +149,8 @@ const CartPage: React.FC = () => {
                         calculateTotals([]);
                     }} style={{
                         height: '3rem',
-                        fontWeight: 'bold'
+                        fontWeight: 'bold',
+                        fontSize: '1.5rem'
                     }}>
                         Clear Cart
                     </Button>
@@ -125,7 +161,7 @@ const CartPage: React.FC = () => {
                     <div className='cart-page-cost'>
                         <div style={{ width: '100%' }}>
 
-                            <h3 style={{ color: '##002F8E', margin: '0', marginBottom: '1.2rem' }}>CART</h3>
+                            <h3 style={{ color: '##002F8E', margin: '0', marginBottom: '1.2rem', fontSize: '1.8rem' }}>CART</h3>
                             <div className='cart-items-list'>
                                 {cartState.items.length > 0 && cartState.items.map((item, index) => (
                                     <div key={index} className='cart-item'>
@@ -179,7 +215,7 @@ const CartPage: React.FC = () => {
                                                             ).filter((cartItem) => cartItem.numUnits > 0);
                                                             (calculateTotals(updatedItems));
                                                         }}><svg xmlns="http://www.w3.org/2000/svg" width="11" height="3" viewBox="0 0 11 3" fill="none">
-                                                            <path d="M9.81299 1.5H1.13007" stroke="white" stroke-width="2" stroke-linecap="round" />
+                                                            <path d="M9.81299 1.5H1.13007" stroke="white" strokeWidth="2" strokeLinecap="round" />
                                                         </svg></Button>
                                                     &nbsp; &nbsp;
                                                     <Text style={{ fontSize: '2rem' }}>{item.numUnits}</Text>
@@ -201,8 +237,8 @@ const CartPage: React.FC = () => {
                                                             );
                                                             (calculateTotals(updatedItems));
                                                         }}><svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 11 11" fill="none">
-                                                            <path d="M9.95876 5.5377H1.17285" stroke="white" stroke-width="2" stroke-linecap="round" />
-                                                            <path d="M5.56586 9.93939V1.1362" stroke="white" stroke-width="2" stroke-linecap="round" />
+                                                            <path d="M9.95876 5.5377H1.17285" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                                                            <path d="M5.56586 9.93939V1.1362" stroke="white" strokeWidth="2" strokeLinecap="round" />
                                                         </svg></Button>
 
                                                 </div>
@@ -225,8 +261,8 @@ const CartPage: React.FC = () => {
                                                 }}
                                             >
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="64" viewBox="0 0 31 64" fill="none">
-                                                    <path d="M23.249 23.7523L7.75367 8.25695" stroke="#4F4F4F" stroke-width="3" stroke-linecap="round" />
-                                                    <path d="M7.77145 23.7581L23.2642 8.26544" stroke="#4F4F4F" stroke-width="3" stroke-linecap="round" />
+                                                    <path d="M23.249 23.7523L7.75367 8.25695" stroke="#4F4F4F" strokeWidth="3" strokeLinecap="round" />
+                                                    <path d="M7.77145 23.7581L23.2642 8.26544" stroke="#4F4F4F" strokeWidth="3" strokeLinecap="round" />
                                                 </svg>
                                             </div>
                                             <Text style={{ fontSize: '1.5rem' }} strong>${(item.numUnits * item.perUnitCost).toFixed(2)}</Text>
@@ -242,6 +278,7 @@ const CartPage: React.FC = () => {
                             display: 'flex',
                             flexDirection: 'column',
                             padding: '1rem',
+                            fontSize: '1.7rem',
                         }}>
                             <p
                                 style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}

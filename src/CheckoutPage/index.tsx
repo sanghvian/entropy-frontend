@@ -78,7 +78,7 @@ const CheckoutPage = () => {
                                                             ).filter((cartItem) => cartItem.numUnits > 0);
                                                             (calculateTotals(updatedItems));
                                                         }}><svg xmlns="http://www.w3.org/2000/svg" width="11" height="3" viewBox="0 0 11 3" fill="none">
-                                                            <path d="M9.81299 1.5H1.13007" stroke="white" stroke-width="2" stroke-linecap="round" />
+                                                            <path d="M9.81299 1.5H1.13007" stroke="white" strokeWidth="2" strokeLinecap="round" />
                                                         </svg></Button>
                                                     &nbsp; &nbsp;
                                                     <Text style={{ fontSize: '2rem' }}>{item.numUnits}</Text>
@@ -100,8 +100,8 @@ const CheckoutPage = () => {
                                                             );
                                                             (calculateTotals(updatedItems));
                                                         }}><svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 11 11" fill="none">
-                                                            <path d="M9.95876 5.5377H1.17285" stroke="white" stroke-width="2" stroke-linecap="round" />
-                                                            <path d="M5.56586 9.93939V1.1362" stroke="white" stroke-width="2" stroke-linecap="round" />
+                                                            <path d="M9.95876 5.5377H1.17285" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                                                            <path d="M5.56586 9.93939V1.1362" stroke="white" strokeWidth="2" strokeLinecap="round" />
                                                         </svg></Button>
 
                                                 </div>
@@ -124,8 +124,8 @@ const CheckoutPage = () => {
                                                 }}
                                             >
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="10" height="32" viewBox="0 0 31 32" fill="none">
-                                                    <path d="M23.249 23.7523L7.75367 8.25695" stroke="#4F4F4F" stroke-width="3" stroke-linecap="round" />
-                                                    <path d="M7.77145 23.7581L23.2642 8.26544" stroke="#4F4F4F" stroke-width="3" stroke-linecap="round" />
+                                                    <path d="M23.249 23.7523L7.75367 8.25695" stroke="#4F4F4F" strokeWidth="3" strokeLinecap="round" />
+                                                    <path d="M7.77145 23.7581L23.2642 8.26544" stroke="#4F4F4F" strokeWidth="3" strokeLinecap="round" />
                                                 </svg>
                                             </div>
                                             <Text style={{ fontSize: '1.5rem' }} strong>${(item.numUnits * item.perUnitCost).toFixed(2)}</Text>
