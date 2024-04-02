@@ -19,18 +19,19 @@ const CartPage: React.FC = () => {
             const prodMessages: CartItem[] = JSON.parse(event.data);
             await prodMessages.forEach((prodMessage) => {
                 if (prodMessage.upc) {
-                    setStagedItems((currentStagedItems) => {
-                        const itemExistsIndex = currentStagedItems.findIndex((item) => item.upc === prodMessage.upc);
-                        if (itemExistsIndex > -1) {
-                            // If item already exists in staged items, update the numUnits count
-                            const updatedItems = [...currentStagedItems];
-                            updatedItems[itemExistsIndex].numUnits += 1;
-                            return updatedItems;
-                        } else {
-                            // Add new item to staged items
-                            return [...currentStagedItems, { ...prodMessage, numUnits: 1, perUnitCost: Math.floor(Math.random() * 10) }];
-                        }
-                    });
+                    // setStagedItems((currentStagedItems) => {
+                    const itemExistsIndex = cartState.items.findIndex((item) => item.upc === prodMessage.upc);
+                    if (itemExistsIndex > -1) {
+                        // If item already exists in staged items, update the numUnits count
+                        const updatedItems = [...cartState.items];
+                        updatedItems[itemExistsIndex].numUnits += 1;
+                        setStagedItems(updatedItems);
+                    } else {
+                        const numOfUnitsForThisUpc = prodMessages.filter((item) => item.upc === prodMessage.upc).length;
+                        // Add new item to staged items
+                        setStagedItems([...stagedItems, { ...prodMessage, numUnits: numOfUnitsForThisUpc, perUnitCost: Math.floor(Math.random() * 10) }]);
+                    }
+                    // });
                 }
             });
         };
