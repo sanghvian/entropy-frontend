@@ -17,23 +17,29 @@ const CartPage: React.FC = () => {
 
         productStream.onmessage = async (event) => {
             const prodMessages: CartItem[] = JSON.parse(event.data);
-            await prodMessages.forEach((prodMessage) => {
+            // setStagedItems([]);
+            // console.log(stagedItems);
+            prodMessages.forEach((prodMessage) => {
                 if (prodMessage.upc) {
                     // setStagedItems((currentStagedItems) => {
                     const itemExistsIndex = stagedItems.findIndex((item) => item.upc === prodMessage.upc);
+                    // console.log("itemExistsIndex", itemExistsIndex)
                     if (itemExistsIndex > -1) {
                         // If item already exists in staged items, update the numUnits count
                         const updatedItems = [...stagedItems];
-                        updatedItems[itemExistsIndex].numUnits += 1;
+                        // updatedItems[itemExistsIndex].numUnits += 1;
                         setStagedItems(updatedItems);
                     } else {
                         const numOfUnitsForThisUpc = prodMessages.filter((item) => item.upc === prodMessage.upc).length;
+                        // console.log(numOfUnitsForThisUpc);
+
                         // Add new item to staged items
                         setStagedItems([...stagedItems, { ...prodMessage, numUnits: numOfUnitsForThisUpc, perUnitCost: Math.floor(Math.random() * 10) }]);
                     }
                     // });
                 }
             });
+            // console.log(stagedItems);
         };
 
 
@@ -76,7 +82,10 @@ const CartPage: React.FC = () => {
     });
 
     const handleAddToCart = () => {
+        console.log("in handleAddToCart: ", stagedItems)
+
         stagedItems.forEach((item) => {
+            console.log("in handleAddToCart loop: ", item)
             addToCart(item);
         });
         // Clear staged items after adding to cart
@@ -220,6 +229,7 @@ const CartPage: React.FC = () => {
                                                 onClick={() => {
                                                     // Flow to remove the current detected item from the cart list
                                                     const updatedItems = cartState.items.filter((cartItem) => cartItem.upc !== item.upc);
+                                                    console.log("items from onclick", updatedItems);
                                                     (calculateTotals(updatedItems));
 
                                                 }}

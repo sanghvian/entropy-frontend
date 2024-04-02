@@ -56,7 +56,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         if (existingItemIndex !== -1) {
             const updatedItems = cartState.items.map((item, index) => {
                 if (index === existingItemIndex) {
-                    return { ...item, numUnits: item.numUnits + 1 };
+                    return { ...item, numUnits: item.numUnits + detectedItem.numUnits };
                 }
                 return item;
             });
@@ -64,7 +64,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         } else {
             const newItem = {
                 ...detectedItem,
-                numUnits: 1,
+                numUnits: detectedItem.numUnits,
             };
             setCartState(prevState => calculateTotals([...prevState.items, newItem]));
         }
