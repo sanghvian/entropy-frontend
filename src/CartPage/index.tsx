@@ -17,6 +17,7 @@ const CartPage: React.FC = () => {
 
         productStream.onmessage = async (event) => {
             const prodMessages: CartItem[] = JSON.parse(event.data);
+            console.log("prodMessages: ",prodMessages)
             // setStagedItems([]);
             // console.log(stagedItems);
             prodMessages.forEach((prodMessage) => {
@@ -24,22 +25,25 @@ const CartPage: React.FC = () => {
                     // setStagedItems((currentStagedItems) => {
                     const itemExistsIndex = stagedItems.findIndex((item) => item.upc === prodMessage.upc);
                     // console.log("itemExistsIndex", itemExistsIndex)
-                    if (itemExistsIndex > -1) {
-                        // If item already exists in staged items, update the numUnits count
-                        const updatedItems = [...stagedItems];
-                        // updatedItems[itemExistsIndex].numUnits += 1;
-                        setStagedItems(updatedItems);
-                    } else {
+                    // if (itemExistsIndex > -1) {
+                    //     // If item already exists in staged items, update the numUnits count
+                    //     const updatedItems = [...stagedItems];
+                    //     // updatedItems[itemExistsIndex].numUnits += 1;
+                    //     setStagedItems(updatedItems);
+                    // } else {
+                    if (itemExistsIndex < 0){
                         const numOfUnitsForThisUpc = prodMessages.filter((item) => item.upc === prodMessage.upc).length;
-                        // console.log(numOfUnitsForThisUpc);
+                        const updatedItems = [...stagedItems, { ...prodMessage, numUnits: numOfUnitsForThisUpc, perUnitCost: Math.floor(Math.random() * 10) }];
+                        console.log("updatedItems",updatedItems);
+
 
                         // Add new item to staged items
-                        setStagedItems([...stagedItems, { ...prodMessage, numUnits: numOfUnitsForThisUpc, perUnitCost: Math.floor(Math.random() * 10) }]);
+                        setStagedItems(updatedItems);
                     }
                     // });
                 }
             });
-            // console.log(stagedItems);
+            console.log("Staged items: ",stagedItems);
         };
 
 
@@ -85,7 +89,7 @@ const CartPage: React.FC = () => {
         console.log("in handleAddToCart: ", stagedItems)
 
         stagedItems.forEach((item) => {
-            console.log("in handleAddToCart loop: ", item)
+            // console.log("in handleAddToCart loop: ", item)
             addToCart(item);
         });
         // Clear staged items after adding to cart

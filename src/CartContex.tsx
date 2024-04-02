@@ -46,6 +46,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         const subtotal = items.reduce((acc, item) => acc + item.numUnits * item.perUnitCost, 0);
         const tax = subtotal * 0.1; // Assuming a 10% tax rate
         const total = subtotal + tax;
+        // console.log('items in calculateTotals', items);
         setCartState({ items, subtotal, tax, total });
         return { items, subtotal, tax, total };
     };
@@ -54,12 +55,15 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         const existingItemIndex = cartState.items.findIndex(item => item.upc === detectedItem.upc);
 
         if (existingItemIndex !== -1) {
+            console.log('adding to cart: ', detectedItem);
+            console.log("Cart State: ", cartState.items);
             const updatedItems = cartState.items.map((item, index) => {
                 if (index === existingItemIndex) {
                     return { ...item, numUnits: item.numUnits + detectedItem.numUnits };
                 }
                 return item;
             });
+            console.log('items after adding to cart: ', updatedItems);
             setCartState(calculateTotals(updatedItems));
         } else {
             const newItem = {
