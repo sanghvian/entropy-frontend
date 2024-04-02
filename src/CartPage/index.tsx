@@ -20,10 +20,10 @@ const CartPage: React.FC = () => {
             await prodMessages.forEach((prodMessage) => {
                 if (prodMessage.upc) {
                     // setStagedItems((currentStagedItems) => {
-                    const itemExistsIndex = cartState.items.findIndex((item) => item.upc === prodMessage.upc);
+                    const itemExistsIndex = stagedItems.findIndex((item) => item.upc === prodMessage.upc);
                     if (itemExistsIndex > -1) {
                         // If item already exists in staged items, update the numUnits count
-                        const updatedItems = [...cartState.items];
+                        const updatedItems = [...stagedItems];
                         updatedItems[itemExistsIndex].numUnits += 1;
                         setStagedItems(updatedItems);
                     } else {
