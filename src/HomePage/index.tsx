@@ -32,7 +32,7 @@ const HomePage = () => {
                 }}
             >
                 <img
-                    src="https://testbucket1841.s3.ap-south-1.amazonaws.com/dump/entropy-logo-2.png"
+                    src="https://testbucket1841.s3.ap-south-1.amazonaws.com/dump/entropy-logo-3.png"
                     alt="Entropy Logo"
                     style={{
                         width: "280px",
