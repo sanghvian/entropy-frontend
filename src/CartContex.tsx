@@ -46,26 +46,25 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         const subtotal = items.reduce((acc, item) => acc + item.numUnits * item.perUnitCost, 0);
         const tax = subtotal * 0.1; // Assuming a 10% tax rate
         const total = subtotal + tax;
-        // console.log('items in calculateTotals', items);
+        console.log('updating total cart state', items)
         setCartState({ items, subtotal, tax, total });
         return { items, subtotal, tax, total };
     };
 
     const addToCart = (detectedItem: CartItem) => {
-        const existingItemIndex = cartState.items.findIndex(item => item.upc === detectedItem.upc);
-
+        const itemUpc = detectedItem.upc?.trim();
+        const existingItemIndex = cartState.items.findIndex(item => item.upc?.trim() === itemUpc);
         if (existingItemIndex !== -1) {
-            console.log('adding to cart: ', detectedItem);
-            console.log("Cart State: ", cartState.items);
-            const updatedItems = cartState.items.map((item, index) => {
-                if (index === existingItemIndex) {
-                    return { ...item, numUnits: item.numUnits + detectedItem.numUnits };
+            console.log('Item already exists in cart', detectedItem, cartState.items[existingItemIndex])
+            const updatedItems = cartState.items.map((item) => {
+                if (item.upc?.trim() === itemUpc) {
+                    return { ...item, numUnits: detectedItem.numUnits + item.numUnits };
                 }
                 return item;
             });
-            console.log('items after adding to cart: ', updatedItems);
-            setCartState(calculateTotals(updatedItems));
+            setCartState(() => calculateTotals(updatedItems));
         } else {
+            console.log('Adding new item to cart', detectedItem)
             const newItem = {
                 ...detectedItem,
                 numUnits: detectedItem.numUnits,
@@ -75,8 +74,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const removeFromCart = (itemUpc: string) => {
-        const updatedItems = cartState.items.filter(item => item.upc !== itemUpc);
-        setCartState(calculateTotals(updatedItems));
+        const updatedItems = cartState.items.filter(item => item.upc?.trim() !== itemUpc);
+        calculateTotals(updatedItems);
     };
 
     return (
