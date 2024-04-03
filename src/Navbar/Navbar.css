@@ -6,11 +6,17 @@
     padding: 1.2rem;
     justify-content: space-between;
     align-items: center;
-
 }
 
-.navbar-container .ultron-logo {
-    height: 6vh
+.navbar-logo-container {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 1rem;
+}
+
+.navbar-logo-container img {
+    height: 3vh;
 }
 
 .navbar-container .cart-logo {

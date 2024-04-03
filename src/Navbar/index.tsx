@@ -8,7 +8,12 @@ const Navbar = () => {
 
     return (
         <div className='navbar-container'>
-            <img onClick={() => navigate("/cart")} className='ultron-logo' src={"https://cylab-temp-testing-bucket.s3.amazonaws.com/images/ultron-logo.svg"} alt="Ultron Logo"></img>
+            <div
+                className='navbar-logo-container'
+            >
+                <img onClick={() => navigate("/cart")} className='ultron-logo' src={"https://cylab-temp-testing-bucket.s3.amazonaws.com/images/ultron-logo.svg"} alt="Ultron Logo"></img>
+                <img className="cart-logo" src={"https://testbucket1841.s3.ap-south-1.amazonaws.com/dump/entropy-logo-3.png"} alt="Cart"></img>
+            </div>
             <div className="cart-icon-container" onClick={() => navigate("/checkout")}>
                 <img className="cart-logo" src={"https://cylab-temp-testing-bucket.s3.amazonaws.com/images/cart-logo.png"} alt="Cart"></img>
                 {items.length > 0 && (
