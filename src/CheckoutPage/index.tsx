@@ -46,7 +46,7 @@ const CheckoutPage = () => {
                                                     src={item.matched_img}
                                                     alt="Product"
                                                     style={{
-                                                        width: '85px'
+                                                        width: '200px'
                                                     }} />
                                             </div>
                                             <div

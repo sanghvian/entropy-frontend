@@ -17,7 +17,10 @@ const CartPage: React.FC = () => {
 
         productStream.onmessage = async (event) => {
             const prodMessages: CartItem[] = await JSON.parse(event.data);
-            if (prodMessages.length === 0) return;
+            if (prodMessages.length === 0) {
+                setStagedItems([]);
+                return;
+            }
             console.log({ prodMessages })
             prodMessages.forEach((prodMessage) => {
                 if (prodMessage.upc?.trim()) {
@@ -184,7 +187,7 @@ const CartPage: React.FC = () => {
                                                     src={item.matched_img}
                                                     alt="Product"
                                                     style={{
-                                                        width: '85px'
+                                                        width: '120px'
                                                     }} />
                                             </div>
                                             <div

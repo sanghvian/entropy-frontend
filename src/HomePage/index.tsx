@@ -35,7 +35,7 @@ const HomePage = () => {
                     src="https://testbucket1841.s3.ap-south-1.amazonaws.com/dump/entropy-logo-3.png"
                     alt="Entropy Logo"
                     style={{
-                        width: "280px",
+                        width: "800px",
                         height: "auto",
                         background: "white",
                     }}
@@ -46,7 +46,7 @@ const HomePage = () => {
                         fontSize: "2.4rem",
                         marginBottom: "0",
                     }}
-                >WELCOME TO ENTROPY</h1>
+                >WELCOME TO THE FUTURE</h1>
                 <h3
                     style={{
                         marginTop: "1rem",
